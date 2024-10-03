@@ -1,0 +1,310 @@
+{
+  "$schema" : "https://json-schema.org/draft/2019-09/schema#",
+  "$id" : "https://purl.imsglobal.org/spec/eduapi/v1p0/schema/json/eduapi_v1p0_componentoffering-jsonschema1.json",
+  "title" : "JSON Schema for the ComponentOffering class.",
+  "description" : "A subsection of a courseOffering. It may be a lesson or separately enrollable unit within a courseOffering. For example, Biology 101 may consist of a Lecture component offering and a Lab component offering",
+  "type" : "object",
+  "properties" : {
+    "offeringType" : {
+      "description" : "A representation of what the entity defines. It is based on an extensible enumerated vocabulary.",
+      "$comment" : "Origin: ComponentTypeEnum (EnumExt); The set of permitted values for `componentType`.",
+      "oneOf" : [ {
+        "type" : "string",
+        "enum" : [ "individualizedInstruction", "integratedLectureLab", "laboratory", "lecture", "practicum", "recitation", "research", "seminar", "independentStudy", "fieldExperience", "exam" ]
+      }, {
+        "type" : "string",
+        "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+      } ]
+    },
+    "component" : {
+      "description" : "A reference to the componentTemplate.",
+      "$comment" : "Origin: ComponentTemplateGUIDRef (DerivedType); A reference to an `EducationComponent` object that has an allocated sourcedId (`GUID`).",
+      "type" : "string"
+    },
+    "parent" : {
+      "type" : "array",
+      "items" : {
+        "description" : "A reference to the parent courseOffering.",
+        "$comment" : "Origin: CourseOfferingGUIDRef (DerivedType); A reference to a `CourseOffering` object that has an allocated sourcedId (`GUID`).",
+        "type" : "string"
+      }
+    },
+    "sourcedId" : {
+      "description" : "The sourcedId of the object. This is the interoperability identifier that systems will refer to when making API calls, or when needing to identify an object. Systems SHOULD be able to map whichever local ids (e.g. database key fields) they use to sourcedId. The sourcedId of an object MUST be an anonymized or pseudonymized identifier of an entity and as such will not contain Personally Identifiable Information (PII) or Personal Data (PD).",
+      "$comment" : "Origin: GUID (DerivedType); The data-type for establishing a Globally Unique Identifier (GUID). There is no predefined structure for the GUID.",
+      "type" : "string"
+    },
+    "recordLanguage" : {
+      "description" : "The primary language used in the described entity.",
+      "$comment" : "Origin: LanguageCode (DerivedType); A language code [[BCP47]].",
+      "type" : "string",
+      "pattern" : "^[a-z]{2,4}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$"
+    },
+    "title" : {
+      "type" : "array",
+      "minItems" : 1,
+      "items" : {
+        "$ref" : "#/$defs/LanguageTypedString"
+      }
+    },
+    "description" : {
+      "type" : "array",
+      "minItems" : 1,
+      "items" : {
+        "$ref" : "#/$defs/LanguageTypedString"
+      }
+    },
+    "primaryCode" : {
+      "$ref" : "#/$defs/IdentifierEntry"
+    },
+    "otherCodes" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/IdentifierEntry"
+      }
+    },
+    "locations" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/Location"
+      }
+    },
+    "organization" : {
+      "description" : "A reference to an Edu-API Organization.",
+      "$comment" : "Origin: OrganizationGUIDRef (DerivedType); A reference to an `Organization` object that has an allocated sourcedId (`GUID`).",
+      "type" : "string"
+    },
+    "academicSession" : {
+      "description" : "A reference to an Edu-API Academic Session",
+      "$comment" : "Origin: AcademicSessionGUIDRef (DerivedType); A reference to an `AcademicSession` object that has an allocated sourcedId (`GUID`).",
+      "type" : "string"
+    },
+    "organizationCode" : {
+      "description" : "A business code used to system might use to reference an organization",
+      "$comment" : "Origin: String (PrimitiveType); Character strings.",
+      "type" : "string"
+    },
+    "academicSessionCode" : {
+      "description" : "A business code that a system might use to reference an academic session.",
+      "$comment" : "Origin: String (PrimitiveType); Character strings.",
+      "type" : "string"
+    },
+    "offeringFormat" : {
+      "description" : "The modality by which the entity is delivered. This is represented by an extensible enumerated vocabulary",
+      "$comment" : "Origin: OfferingFormatEnum (EnumExt); The set of permitted values for `offeringFormat`.",
+      "oneOf" : [ {
+        "type" : "string",
+        "enum" : [ "online", "blended", "onGround" ]
+      }, {
+        "type" : "string",
+        "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+      } ]
+    },
+    "paceOfStudy" : {
+      "description" : "The tempo that the course is taught at as a percentage of a normal course.",
+      "$comment" : "Origin: Percentage (DerivedType); A percentage expression without fractions. One, two or three digits followed by the '%' character.",
+      "type" : "string"
+    },
+    "registrationStatus" : {
+      "description" : "The status of the entity indicating whether it is open for enrollment for teachers and students. This is represented by an extensible enumerated vocabulary.",
+      "$comment" : "Origin: RegistrationStatusEnum (Enum); The set of permitted values for `registrationStatus`.",
+      "type" : "string",
+      "enum" : [ "open", "closed", "pending", "waitlist" ]
+    },
+    "startDate" : {
+      "description" : "The start date of the associated event.",
+      "$comment" : "Origin: DateZ (DerivedType); A `Date` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "endDate" : {
+      "description" : "The end date of the associated event.",
+      "$comment" : "Origin: DateZ (DerivedType); A `Date` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "teachingLanguage" : {
+      "description" : "The main language used to relay the content of the offering.",
+      "$comment" : "Origin: LanguageCode (DerivedType); A language code [[BCP47]].",
+      "type" : "string",
+      "pattern" : "^[a-z]{2,4}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$"
+    },
+    "maxNumberStudents" : {
+      "description" : "The maximum number of students allowed to enroll for this offering",
+      "$comment" : "Origin: Integer (PrimitiveType)",
+      "type" : "integer"
+    },
+    "minNumberStudents" : {
+      "description" : "The minimum number of students allowed to enroll for this offering",
+      "$comment" : "Origin: Integer (PrimitiveType)",
+      "type" : "integer"
+    },
+    "enrolledNumberStudents" : {
+      "description" : "The number of students that have already enrolled for this offering",
+      "$comment" : "Origin: Integer (PrimitiveType)",
+      "type" : "integer"
+    },
+    "pendingNumberStudents" : {
+      "description" : "The number of students that have a pending enrollment request for this offering",
+      "$comment" : "Origin: Integer (PrimitiveType)",
+      "type" : "integer"
+    },
+    "roleEnablement" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/RoleEnablement"
+      }
+    },
+    "recordStatus" : {
+      "description" : "The status of this record. A record which is flagged 'toBeDeleted' is to be considered safe to delete. Systems can delete records that are flagged as such if they wish, but they are not required to do so.",
+      "$comment" : "Origin: RecordStatusTypeEnum (Enum); The set of values to describe the state of a record in the source system. For systems migrating from, or making use of OneRoster, deleted is to be considered synonymous with toBeDeleted.",
+      "type" : "string",
+      "enum" : [ "active", "deleted", "inactive" ]
+    },
+    "dateLastModified" : {
+      "description" : "A timestamp describing when this record was last modified.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "synchronicity" : {
+      "description" : "An indicator of whether instructor and learner must both be present at the same time",
+      "$comment" : "Origin: SynchronicityEnum (EnumExt); The set of permitted values used to describe whether an education offering is taught in person, online, or via a hybrid, combined approach.",
+      "oneOf" : [ {
+        "type" : "string",
+        "enum" : [ "hybrid", "asynchronous", "synchronous" ]
+      }, {
+        "type" : "string",
+        "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+      } ]
+    },
+    "extensions" : {
+      "$ref" : "#/$defs/educationOfferingExtensions"
+    }
+  },
+  "required" : [ "offeringType", "component", "sourcedId", "recordLanguage", "title", "description", "primaryCode", "organization", "academicSession", "offeringFormat", "registrationStatus", "startDate", "endDate", "recordStatus" ],
+  "additionalProperties" : false,
+  "$defs" : {
+    "IdentifierEntry" : {
+      "description" : "A container to transmit additional needed identifiers",
+      "type" : "object",
+      "properties" : {
+        "identifier" : {
+          "description" : "An identifier.",
+          "$comment" : "Origin: Identifier (DerivedType); A `NormalizedString` that functions as an identifier.",
+          "type" : "string"
+        },
+        "identifierType" : {
+          "description" : "The identifier type.",
+          "$comment" : "Origin: IdentifierTypeEnum (EnumExt)",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "systemId", "productId", "userName", "accountId", "emailAddress", "nationalIdentityNumber", "isbn", "issn", "lisSourcedId", "oneRosterSourcedId", "sisSourcedId", "ltiContextId", "ltiDeploymentId", "ltiToolId", "ltiPlatformId", "ltiUserId", "identifier" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        }
+      },
+      "required" : [ "identifier", "identifierType" ],
+      "additionalProperties" : false
+    },
+    "RoleEnablement" : {
+      "description" : "An array to store associated dates for a entity. Specifically, additional important date and time offsets surrounding when specific roles may be associated with the course offering before or after the official start and end dates. These dates are meant to be considered additional metadata about the course offering and applied independent of the startDate and endDate. They are not intended to be used to as replacements.",
+      "type" : "object",
+      "properties" : {
+        "role" : {
+          "description" : "The role of the associated person in the given context.",
+          "$comment" : "Origin: RoleTypeEnum (EnumExt); The set of permitted values for `roleType`.",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "member", "chair", "staff", "student", "administrator", "aide", "guardian", "parent", "proctor", "relative", "teacher", "advisor", "teachingAssistant" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        },
+        "startDate" : {
+          "description" : "The start date of the associated event.",
+          "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+          "type" : "string",
+          "format" : "date-time"
+        },
+        "endDate" : {
+          "description" : "The end date of the associated event.",
+          "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+          "type" : "string",
+          "format" : "date-time"
+        }
+      },
+      "required" : [ "role" ],
+      "additionalProperties" : false
+    },
+    "LanguageTypedString" : {
+      "description" : "A String with an associated language code.",
+      "type" : "object",
+      "properties" : {
+        "recordLanguage" : {
+          "description" : "The primary language used in the described entity.",
+          "$comment" : "Origin: LanguageCode (DerivedType); A language code [[BCP47]].",
+          "type" : "string",
+          "pattern" : "^[a-z]{2,4}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$"
+        },
+        "value" : {
+          "description" : "No description supplied.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        }
+      },
+      "required" : [ "recordLanguage", "value" ],
+      "additionalProperties" : false
+    },
+    "Location" : {
+      "description" : "A container for describing the location an entity takes place at.",
+      "type" : "object",
+      "properties" : {
+        "identifier" : {
+          "description" : "An identifier.",
+          "$comment" : "Origin: Identifier (DerivedType); A `NormalizedString` that functions as an identifier.",
+          "type" : "string"
+        },
+        "description" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/LanguageTypedString"
+          }
+        },
+        "geoLocation" : {
+          "$ref" : "#/$defs/GeoCoordinates"
+        }
+      },
+      "required" : [ ],
+      "additionalProperties" : false
+    },
+    "GeoCoordinates" : {
+      "description" : "The geographic coordinates of a location.",
+      "type" : "object",
+      "properties" : {
+        "latitude" : {
+          "description" : "The latitude of the location [[WGS-84]].",
+          "$comment" : "Origin: Float (PrimitiveType)",
+          "type" : "number"
+        },
+        "longitude" : {
+          "description" : "The longitude of the location [[WGS-84]].",
+          "$comment" : "Origin: Float (PrimitiveType)",
+          "type" : "number"
+        }
+      },
+      "required" : [ "latitude", "longitude" ],
+      "additionalProperties" : false
+    },
+    "educationOfferingExtensions" : {
+      "description" : "Extension properties related to education offerings",
+      "type" : "object",
+      "properties" : { },
+      "required" : [ ],
+      "additionalProperties" : true
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "$schema" : "https://json-schema.org/draft/2019-09/schema#",
+  "$id" : "https://purl.imsglobal.org/spec/eduapi/v1p0/schema/json/eduapi_v1p0_affiliation-jsonschema1.json",
+  "title" : "JSON Schema for the Affiliation class.",
+  "description" : "A container that describes an Edu-API persons relationships to organizations; including their role(s) and the time frames those roles are in place.",
+  "type" : "object",
+  "properties" : {
+    "sourcedId" : {
+      "description" : "The sourcedId of the object. This is the interoperability identifier that systems will refer to when making API calls, or when needing to identify an object. Systems SHOULD be able to map whichever local ids (e.g. database key fields) they use to sourcedId. The sourcedId of an object MUST be an anonymized or pseudonymized identifier of an entity and as such will not contain Personally Identifiable Information (PII) or Personal Data (PD).",
+      "$comment" : "Origin: GUID (DerivedType); The data-type for establishing a Globally Unique Identifier (GUID). There is no predefined structure for the GUID.",
+      "type" : "string"
+    },
+    "person" : {
+      "description" : "A reference to an Edu-API Person.",
+      "$comment" : "Origin: PersonGUIDRef (DerivedType); A reference to a `Person` object that has an allocated sourcedId (`GUID`).",
+      "type" : "string"
+    },
+    "organization" : {
+      "description" : "A reference to an Edu-API Organization.",
+      "$comment" : "Origin: OrganizationGUIDRef (DerivedType); A reference to an `Organization` object that has an allocated sourcedId (`GUID`).",
+      "type" : "string"
+    },
+    "role" : {
+      "description" : "The role of the associated person in the given context.",
+      "$comment" : "Origin: RoleTypeEnum (EnumExt); The set of permitted values for `roleType`.",
+      "oneOf" : [ {
+        "type" : "string",
+        "enum" : [ "member", "chair", "staff", "student", "administrator", "aide", "guardian", "parent", "proctor", "relative", "teacher", "advisor", "teachingAssistant" ]
+      }, {
+        "type" : "string",
+        "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+      } ]
+    },
+    "startDate" : {
+      "description" : "The start date of the associated event.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "endDate" : {
+      "description" : "The end date of the associated event.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "affiliationStatus" : {
+      "description" : "The status of the person's affiliation with the organization. This is based upon an enumerated vocabulary",
+      "$comment" : "Origin: AffiliationStatusEnum (EnumExt); The set of permitted values for `affiliationStatus`.",
+      "oneOf" : [ {
+        "type" : "string",
+        "enum" : [ "active", "inactive", "auditing", "withdrawn" ]
+      }, {
+        "type" : "string",
+        "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+      } ]
+    },
+    "recordStatus" : {
+      "description" : "The status of this record. A record which is flagged 'toBeDeleted' is to be considered safe to delete. Systems can delete records that are flagged as such if they wish, but they are not required to do so.",
+      "$comment" : "Origin: RecordStatusTypeEnum (Enum); The set of values to describe the state of a record in the source system. For systems migrating from, or making use of OneRoster, deleted is to be considered synonymous with toBeDeleted.",
+      "type" : "string",
+      "enum" : [ "active", "deleted", "inactive" ]
+    },
+    "dateLastModified" : {
+      "description" : "A timestamp describing when this record was last modified.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "extensions" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/affiliationExtensions"
+      }
+    }
+  },
+  "required" : [ "sourcedId", "person", "organization", "role", "affiliationStatus", "recordStatus" ],
+  "additionalProperties" : false,
+  "$defs" : {
+    "affiliationExtensions" : {
+      "description" : "Extension properties related to affiliations",
+      "type" : "object",
+      "properties" : { },
+      "required" : [ ],
+      "additionalProperties" : true
+    }
+  }
+}

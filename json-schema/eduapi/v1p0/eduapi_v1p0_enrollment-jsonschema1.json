@@ -1,0 +1,106 @@
+{
+  "$schema" : "https://json-schema.org/draft/2019-09/schema#",
+  "$id" : "https://purl.imsglobal.org/spec/eduapi/v1p0/schema/json/eduapi_v1p0_enrollment-jsonschema1.json",
+  "title" : "JSON Schema for the Enrollment class.",
+  "description" : "The contextualized joining of a person and a CourseOffering, CollectionOffering or ComponentOffering.",
+  "type" : "object",
+  "properties" : {
+    "sourcedId" : {
+      "description" : "The sourcedId of the object. This is the interoperability identifier that systems will refer to when making API calls, or when needing to identify an object. Systems SHOULD be able to map whichever local ids (e.g. database key fields) they use to sourcedId. The sourcedId of an object MUST be an anonymized or pseudonymized identifier of an entity and as such will not contain Personally Identifiable Information (PII) or Personal Data (PD).",
+      "$comment" : "Origin: GUID (DerivedType); The data-type for establishing a Globally Unique Identifier (GUID). There is no predefined structure for the GUID.",
+      "type" : "string"
+    },
+    "recordLanguage" : {
+      "description" : "The primary language used in the described entity.",
+      "$comment" : "Origin: LanguageCode (DerivedType); A language code [[BCP47]].",
+      "type" : "string",
+      "pattern" : "^[a-z]{2,4}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$"
+    },
+    "isActive" : {
+      "description" : "Used to identify if the enrollment described in this entity is currently active or inactive. A value of true indicates that the enrollment is active, a value of false indicates the enrollment is inactive. To be used in conjunction with enrollmentStatus when more details about the enrollment state are required. See the best practices guide for guidance on how to use these properties in tandem.",
+      "$comment" : "Origin: Boolean (PrimitiveType); A boolean, expressed as `true` or `false`",
+      "type" : "boolean"
+    },
+    "enrollmentStatus" : {
+      "description" : "The status of this enrollment.",
+      "$comment" : "Origin: EnrollmentStatusEnum (EnumExt); The set of permitted values for `enrollmentStatus`.",
+      "oneOf" : [ {
+        "type" : "string",
+        "enum" : [ "onLeave", "withdrawn", "accepted", "pending", "cancelled", "registered", "revoked", "Interruption", "finished", "withdrawnFailing", "withdrawnPassing", "dropped", "suspended", "enrolled", "declined", "deferred", "onHold" ]
+      }, {
+        "type" : "string",
+        "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+      } ]
+    },
+    "person" : {
+      "description" : "A reference to an Edu-API Person.",
+      "$comment" : "Origin: PersonGUIDRef (DerivedType); A reference to a `Person` object that has an allocated sourcedId (`GUID`).",
+      "type" : "string"
+    },
+    "role" : {
+      "description" : "The role of the associated person in the given context.",
+      "$comment" : "Origin: RoleTypeEnum (EnumExt); The set of permitted values for `roleType`.",
+      "oneOf" : [ {
+        "type" : "string",
+        "enum" : [ "member", "chair", "staff", "student", "administrator", "aide", "guardian", "parent", "proctor", "relative", "teacher", "advisor", "teachingAssistant" ]
+      }, {
+        "type" : "string",
+        "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+      } ]
+    },
+    "startDate" : {
+      "description" : "The start date of the associated event.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "endDate" : {
+      "description" : "The end date of the associated event.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "educationOffering" : {
+      "description" : "A reference to an Edu-API offering entity. This is the instantiated Education the person is being enrolled on.",
+      "$comment" : "Origin: EducationOfferingGUIDRef (DerivedType); A reference to a `EducationCollectionOffering`, `CourseOffering` or `EducationComponentOffering` object that has an allocated sourcedId (`GUID`).",
+      "type" : "string"
+    },
+    "OfferingType" : {
+      "description" : "The type of education being offered. This is based on an enumerated vocabulary.",
+      "$comment" : "Origin: EducationOfferingTypeEnum (EnumExt); The set of permitted values for `educationOfferingType`.",
+      "oneOf" : [ {
+        "type" : "string",
+        "enum" : [ "collection", "course", "component" ]
+      }, {
+        "type" : "string",
+        "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+      } ]
+    },
+    "recordStatus" : {
+      "description" : "The status of this record. A record which is flagged 'toBeDeleted' is to be considered safe to delete. Systems can delete records that are flagged as such if they wish, but they are not required to do so.",
+      "$comment" : "Origin: RecordStatusTypeEnum (Enum); The set of values to describe the state of a record in the source system. For systems migrating from, or making use of OneRoster, deleted is to be considered synonymous with toBeDeleted.",
+      "type" : "string",
+      "enum" : [ "active", "deleted", "inactive" ]
+    },
+    "dateLastModified" : {
+      "description" : "A timestamp describing when this record was last modified.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "extensions" : {
+      "$ref" : "#/$defs/enrollmentExtensions"
+    }
+  },
+  "required" : [ "sourcedId", "recordLanguage", "isActive", "enrollmentStatus", "person", "role", "educationOffering", "OfferingType", "recordStatus" ],
+  "additionalProperties" : false,
+  "$defs" : {
+    "enrollmentExtensions" : {
+      "description" : "Extension properties related to enrollments",
+      "type" : "object",
+      "properties" : { },
+      "required" : [ ],
+      "additionalProperties" : true
+    }
+  }
+}

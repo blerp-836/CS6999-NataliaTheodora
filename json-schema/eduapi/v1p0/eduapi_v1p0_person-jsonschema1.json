@@ -1,0 +1,555 @@
+{
+  "$schema" : "https://json-schema.org/draft/2019-09/schema#",
+  "$id" : "https://purl.imsglobal.org/spec/eduapi/v1p0/schema/json/eduapi_v1p0_person-jsonschema1.json",
+  "title" : "JSON Schema for the Person class.",
+  "description" : "A Person represents a human being, alive or deceased, real or imaginary.",
+  "type" : "object",
+  "properties" : {
+    "sourcedId" : {
+      "description" : "The sourcedId of the object. This is the interoperability identifier that systems will refer to when making API calls, or when needing to identify an object. Systems SHOULD be able to map whichever local ids (e.g. database key fields) they use to sourcedId. The sourcedId of an object MUST be an anonymized or pseudonymized identifier of an entity and as such will not contain Personally Identifiable Information (PII) or Personal Data (PD).",
+      "$comment" : "Origin: GUID (DerivedType); The data-type for establishing a Globally Unique Identifier (GUID). There is no predefined structure for the GUID.",
+      "type" : "string"
+    },
+    "otherIdentifiers" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/IdentifierEntry"
+      }
+    },
+    "recordLanguage" : {
+      "description" : "The primary language used in the described entity.",
+      "$comment" : "Origin: LanguageCode (DerivedType); A language code [[BCP47]].",
+      "type" : "string",
+      "pattern" : "^[a-z]{2,4}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$"
+    },
+    "legalName" : {
+      "$ref" : "#/$defs/PersonName"
+    },
+    "formattedName" : {
+      "description" : "the long form formatted name, this will often be dependent on region or system requirements.",
+      "$comment" : "Origin: NFCString (DerivedType); A `NormalizedString` further normalized using Unicode Normalization Form C [[UAX15]].",
+      "type" : "string"
+    },
+    "otherNames" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/PersonNameEntry"
+      }
+    },
+    "gender" : {
+      "description" : "The gender of the individual. It is based on an extensible enumerated vocabulary.",
+      "$comment" : "Origin: GenderEnum (EnumExt); The gender of this person. Other values than those defined may be given to capture the gender identity of this Person.",
+      "oneOf" : [ {
+        "type" : "string",
+        "enum" : [ "male", "female", "unspecified", "other" ]
+      }, {
+        "type" : "string",
+        "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+      } ]
+    },
+    "pronouns" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/LanguageTypedString"
+      }
+    },
+    "languagesSpoken" : {
+      "type" : "array",
+      "items" : {
+        "description" : "The list of languages that this person speaks.",
+        "$comment" : "Origin: LanguageCode (DerivedType); A language code [[BCP47]].",
+        "type" : "string",
+        "pattern" : "^[a-z]{2,4}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$"
+      }
+    },
+    "dateOfBirth" : {
+      "description" : "The date of birth.",
+      "$comment" : "Origin: Date (PrimitiveType); An [[ISO8601]] calendar date using the syntax YYYY-MM-DD.",
+      "type" : "string",
+      "format" : "date"
+    },
+    "placeOfBirth" : {
+      "description" : "The place of birth. Commonly a city or municipality.",
+      "$comment" : "Origin: String (PrimitiveType); Character strings.",
+      "type" : "string"
+    },
+    "countryOfBirth" : {
+      "description" : "The country of birth.",
+      "$comment" : "Origin: String (PrimitiveType); Character strings.",
+      "type" : "string"
+    },
+    "isDeceased" : {
+      "description" : "Used to identify if the person being described is alive or dead. If this property is absent or set to `false` but the `dateOfDeath` property is set, then the consuming system should interpret that as the person being deceased.",
+      "$comment" : "Origin: Boolean (PrimitiveType); A boolean, expressed as `true` or `false`",
+      "type" : "boolean"
+    },
+    "dateOfDeath" : {
+      "description" : "The date of death. The presence of this property means that the person being described is known to be deceased. In scenarios where this conflicts with the `isDeceased` flag, this property takes precedence and consuming systems should interpret that as the person being deceased.",
+      "$comment" : "Origin: Date (PrimitiveType); An [[ISO8601]] calendar date using the syntax YYYY-MM-DD.",
+      "type" : "string",
+      "format" : "date"
+    },
+    "primaryEmail" : {
+      "$ref" : "#/$defs/OptionallyTypedEmail"
+    },
+    "otherEmails" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/TypedEmail"
+      }
+    },
+    "primaryPhone" : {
+      "$ref" : "#/$defs/OptionallyTypedPhone"
+    },
+    "otherPhones" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/TypedPhone"
+      }
+    },
+    "primaryAddress" : {
+      "$ref" : "#/$defs/OptionallyTypedAddress"
+    },
+    "otherAddresses" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/TypedAddress"
+      }
+    },
+    "agents" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/Agents"
+      }
+    },
+    "dateLastModified" : {
+      "description" : "A timestamp describing when this record was last modified.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "recordStatus" : {
+      "description" : "The status of this record. A record which is flagged 'toBeDeleted' is to be considered safe to delete. Systems can delete records that are flagged as such if they wish, but they are not required to do so.",
+      "$comment" : "Origin: RecordStatusTypeEnum (Enum); The set of values to describe the state of a record in the source system. For systems migrating from, or making use of OneRoster, deleted is to be considered synonymous with toBeDeleted.",
+      "type" : "string",
+      "enum" : [ "active", "deleted", "inactive" ]
+    },
+    "extensions" : {
+      "$ref" : "#/$defs/personExtensions"
+    }
+  },
+  "required" : [ "sourcedId", "recordLanguage", "recordStatus" ],
+  "additionalProperties" : false,
+  "$defs" : {
+    "IdentifierEntry" : {
+      "description" : "A container to transmit additional needed identifiers",
+      "type" : "object",
+      "properties" : {
+        "identifier" : {
+          "description" : "An identifier.",
+          "$comment" : "Origin: Identifier (DerivedType); A `NormalizedString` that functions as an identifier.",
+          "type" : "string"
+        },
+        "identifierType" : {
+          "description" : "The identifier type.",
+          "$comment" : "Origin: IdentifierTypeEnum (EnumExt)",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "systemId", "productId", "userName", "accountId", "emailAddress", "nationalIdentityNumber", "isbn", "issn", "lisSourcedId", "oneRosterSourcedId", "sisSourcedId", "ltiContextId", "ltiDeploymentId", "ltiToolId", "ltiPlatformId", "ltiUserId", "identifier" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        }
+      },
+      "required" : [ "identifier", "identifierType" ],
+      "additionalProperties" : false
+    },
+    "OptionallyTypedEmail" : {
+      "description" : "An optionally typed email address.",
+      "type" : "object",
+      "properties" : {
+        "emailType" : {
+          "description" : "The type of email address.",
+          "$comment" : "Origin: EmailTypeEnum (EnumExt); The set of permitted values for `emailType`.",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "homeEmail", "workEmail", "iceEmail" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        },
+        "email" : {
+          "description" : "An email address.",
+          "$comment" : "Origin: EmailAddress (DerivedType); A `NormalizedString` representing an email address.",
+          "type" : "string"
+        }
+      },
+      "required" : [ "email" ],
+      "additionalProperties" : false
+    },
+    "Agents" : {
+      "description" : "A container with the set of Edu-API persons that can act on behalf of the person in question. This includes description of the type of relationship exists and the context it is applicable in.",
+      "type" : "object",
+      "properties" : {
+        "agentType" : {
+          "description" : "A description of the relationship between the agent and the person the are an agent for. This is based on an extensible enumerated vocabulary.",
+          "$comment" : "Origin: AgentTypeEnum (EnumExt); The set of permitted values for `agentType`.",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "parent", "guardian", "emergencyContact" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        },
+        "person" : {
+          "description" : "A reference to an Edu-API person. This represents the person acting in an agency capacity.",
+          "$comment" : "Origin: PersonGUIDRef (DerivedType); A reference to a `Person` object that has an allocated sourcedId (`GUID`).",
+          "type" : "string"
+        },
+        "description" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/LanguageTypedString"
+          }
+        },
+        "domain" : {
+          "description" : "The context within which the person can act as an agent in.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        }
+      },
+      "required" : [ "agentType", "person" ],
+      "additionalProperties" : false
+    },
+    "TypedPhone" : {
+      "description" : "A typed phone number.",
+      "type" : "object",
+      "properties" : {
+        "phoneType" : {
+          "description" : "The type of phone number. This is based on an extensible enumerated vocabulary.",
+          "$comment" : "Origin: PhoneTypeEnum (EnumExt); The set of permitted values for `phoneType`.",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "homePhone", "workPhone", "icePhone" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        },
+        "phone" : {
+          "description" : "A phone number.",
+          "$comment" : "Origin: PhoneNumber (DerivedType); A `NormalizedString` representing a phone number.",
+          "type" : "string"
+        }
+      },
+      "required" : [ "phoneType", "phone" ],
+      "additionalProperties" : false
+    },
+    "PersonNameEntry" : {
+      "description" : "No description supplied.",
+      "type" : "object",
+      "properties" : {
+        "nameType" : {
+          "description" : "The type of name described in this entry.",
+          "$comment" : "Origin: PersonNameTypeEnum (EnumExt); The set of permitted values for name types.",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "legalName", "preferredName", "phoneticName", "aliasName", "formerName" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        },
+        "familyName" : {
+          "description" : "Family name. In the western world, often referred to as the 'last name' of a person.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "givenName" : {
+          "description" : "Given name. In the western world, often referred to as the 'first name' of a person.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "additionalName" : {
+          "description" : "Additional name. Includes what is often referred to as 'middle name' in the western world.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "patronymicName" : {
+          "description" : "Patronymic name.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "honorificPrefix" : {
+          "description" : "Honorific prefix(es) preceding a person's name (e.g. 'Dr', 'Mrs' or 'Mr').",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "honorificSuffix" : {
+          "description" : "Honorific suffix(es) following a person's name (e.g. 'M.D, PhD').",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "familyNamePrefix" : {
+          "description" : "Family name prefix. As used in some locales, this is the leading part of a family name (e.g. 'de' in the name 'de Boer').",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        }
+      },
+      "required" : [ "nameType" ],
+      "additionalProperties" : false
+    },
+    "LanguageTypedString" : {
+      "description" : "A String with an associated language code.",
+      "type" : "object",
+      "properties" : {
+        "recordLanguage" : {
+          "description" : "The primary language used in the described entity.",
+          "$comment" : "Origin: LanguageCode (DerivedType); A language code [[BCP47]].",
+          "type" : "string",
+          "pattern" : "^[a-z]{2,4}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$"
+        },
+        "value" : {
+          "description" : "No description supplied.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        }
+      },
+      "required" : [ "recordLanguage", "value" ],
+      "additionalProperties" : false
+    },
+    "OptionallyTypedAddress" : {
+      "description" : "A optionally typed address.",
+      "type" : "object",
+      "properties" : {
+        "addressType" : {
+          "description" : "The type of address. This is based on an extensible enumerated vocabulary.",
+          "$comment" : "Origin: AddressTypeEnum (EnumExt); The set of permitted values for `addressType`.",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "visitingAddress", "mailingAddress", "permanentAddress", "deliveryAddress", "billingAddress", "homeAddress", "workAddress", "formerAddress" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        },
+        "addressCountry" : {
+          "description" : "A country.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "addressCountryCode" : {
+          "description" : "A country code. The value must be a ISO 3166-1 alpha-2 country code [[ISO3166-1]].",
+          "$comment" : "Origin: CountryCode (DerivedType); A two-digit ISO 3166-1 alpha-2 country code [[ISO3166-1]].",
+          "type" : "string"
+        },
+        "addressRegion" : {
+          "description" : "A region within the country.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "addressLocality" : {
+          "description" : "A locality within the region.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "streetAddress" : {
+          "description" : "A street address within the locality.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "postOfficeBoxNumber" : {
+          "description" : "A post office box number for PO box addresses.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "postalCode" : {
+          "description" : "A postal code.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "geo" : {
+          "$ref" : "#/$defs/GeoCoordinates"
+        }
+      },
+      "required" : [ ],
+      "additionalProperties" : false
+    },
+    "TypedAddress" : {
+      "description" : "A typed address.",
+      "type" : "object",
+      "properties" : {
+        "addressType" : {
+          "description" : "The type of address. This is based on an extensible enumerated vocabulary.",
+          "$comment" : "Origin: AddressTypeEnum (EnumExt); The set of permitted values for `addressType`.",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "visitingAddress", "mailingAddress", "permanentAddress", "deliveryAddress", "billingAddress", "homeAddress", "workAddress", "formerAddress" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        },
+        "addressCountry" : {
+          "description" : "A country.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "addressCountryCode" : {
+          "description" : "A country code. The value must be a ISO 3166-1 alpha-2 country code [[ISO3166-1]].",
+          "$comment" : "Origin: CountryCode (DerivedType); A two-digit ISO 3166-1 alpha-2 country code [[ISO3166-1]].",
+          "type" : "string"
+        },
+        "addressRegion" : {
+          "description" : "A region within the country.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "addressLocality" : {
+          "description" : "A locality within the region.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "streetAddress" : {
+          "description" : "A street address within the locality.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "postOfficeBoxNumber" : {
+          "description" : "A post office box number for PO box addresses.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "postalCode" : {
+          "description" : "A postal code.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "geo" : {
+          "$ref" : "#/$defs/GeoCoordinates"
+        }
+      },
+      "required" : [ "addressType" ],
+      "additionalProperties" : false
+    },
+    "personExtensions" : {
+      "description" : "Extension properties related to Edu-API persons",
+      "type" : "object",
+      "properties" : { },
+      "required" : [ ],
+      "additionalProperties" : true
+    },
+    "GeoCoordinates" : {
+      "description" : "The geographic coordinates of a location.",
+      "type" : "object",
+      "properties" : {
+        "latitude" : {
+          "description" : "The latitude of the location [[WGS-84]].",
+          "$comment" : "Origin: Float (PrimitiveType)",
+          "type" : "number"
+        },
+        "longitude" : {
+          "description" : "The longitude of the location [[WGS-84]].",
+          "$comment" : "Origin: Float (PrimitiveType)",
+          "type" : "number"
+        }
+      },
+      "required" : [ "latitude", "longitude" ],
+      "additionalProperties" : false
+    },
+    "PersonName" : {
+      "description" : "The set of parts that are used to define an Edu-API persons name, this design attempts to account for international naming needs.",
+      "type" : "object",
+      "properties" : {
+        "familyName" : {
+          "description" : "Family name. In the western world, often referred to as the 'last name' of a person.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "givenName" : {
+          "description" : "Given name. In the western world, often referred to as the 'first name' of a person.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "additionalName" : {
+          "description" : "Additional name. Includes what is often referred to as 'middle name' in the western world.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "patronymicName" : {
+          "description" : "Patronymic name.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "honorificPrefix" : {
+          "description" : "Honorific prefix(es) preceding a person's name (e.g. 'Dr', 'Mrs' or 'Mr').",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "honorificSuffix" : {
+          "description" : "Honorific suffix(es) following a person's name (e.g. 'M.D, PhD').",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        },
+        "familyNamePrefix" : {
+          "description" : "Family name prefix. As used in some locales, this is the leading part of a family name (e.g. 'de' in the name 'de Boer').",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        }
+      },
+      "required" : [ ],
+      "additionalProperties" : false
+    },
+    "TypedEmail" : {
+      "description" : "A typed email address.",
+      "type" : "object",
+      "properties" : {
+        "emailType" : {
+          "description" : "The type of email address. This is based on an extensible enumerated vocabulary.",
+          "$comment" : "Origin: EmailTypeEnum (EnumExt); The set of permitted values for `emailType`.",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "homeEmail", "workEmail", "iceEmail" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        },
+        "email" : {
+          "description" : "An email address.",
+          "$comment" : "Origin: EmailAddress (DerivedType); A `NormalizedString` representing an email address.",
+          "type" : "string"
+        }
+      },
+      "required" : [ "emailType", "email" ],
+      "additionalProperties" : false
+    },
+    "OptionallyTypedPhone" : {
+      "description" : "An optionally typed phone number.",
+      "type" : "object",
+      "properties" : {
+        "phoneType" : {
+          "description" : "The type of address. This is based on an extensible enumerated vocabulary.",
+          "$comment" : "Origin: PhoneTypeEnum (EnumExt); The set of permitted values for `phoneType`.",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "homePhone", "workPhone", "icePhone" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        },
+        "phone" : {
+          "description" : "A phone number.",
+          "$comment" : "Origin: PhoneNumber (DerivedType); A `NormalizedString` representing a phone number.",
+          "type" : "string"
+        }
+      },
+      "required" : [ "phone" ],
+      "additionalProperties" : false
+    }
+  }
+}

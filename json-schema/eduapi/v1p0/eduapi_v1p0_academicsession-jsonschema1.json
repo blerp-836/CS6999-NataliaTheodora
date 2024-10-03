@@ -1,0 +1,140 @@
+{
+  "$schema" : "https://json-schema.org/draft/2019-09/schema#",
+  "$id" : "https://purl.imsglobal.org/spec/eduapi/v1p0/schema/json/eduapi_v1p0_academicsession-jsonschema1.json",
+  "title" : "JSON Schema for the AcademicSession class.",
+  "description" : "A calendar period during which a school or institution schedules classes, offerings, or other units of learning for availability.",
+  "type" : "object",
+  "properties" : {
+    "sourcedId" : {
+      "description" : "The sourcedId of the object. This is the interoperability identifier that systems will refer to when making API calls, or when needing to identify an object. Systems SHOULD be able to map whichever local ids (e.g. database key fields) they use to sourcedId. The sourcedId of an object MUST be an anonymized or pseudonymized identifier of an entity and as such will not contain Personally Identifiable Information (PII) or Personal Data (PD).",
+      "$comment" : "Origin: GUID (DerivedType); The data-type for establishing a Globally Unique Identifier (GUID). There is no predefined structure for the GUID.",
+      "type" : "string"
+    },
+    "recordLanguage" : {
+      "description" : "The primary language used in the described entity.",
+      "$comment" : "Origin: LanguageCode (DerivedType); A language code [[BCP47]].",
+      "type" : "string",
+      "pattern" : "^[a-z]{2,4}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$"
+    },
+    "primaryCode" : {
+      "$ref" : "#/$defs/IdentifierEntry"
+    },
+    "otherCodes" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/IdentifierEntry"
+      }
+    },
+    "sessionType" : {
+      "description" : "The type of academic session. This is based upon an enumerated vocabulary.",
+      "$comment" : "Origin: AcademicSessionTypeEnum (EnumExt); The set of permitted values used to describe the temporal boundaries of an education.",
+      "oneOf" : [ {
+        "type" : "string",
+        "enum" : [ "gradingPeriod", "semester", "schoolYear", "term", "studyPeriod" ]
+      }, {
+        "type" : "string",
+        "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+      } ]
+    },
+    "title" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/LanguageTypedString"
+      }
+    },
+    "startDate" : {
+      "description" : "The start date of the associated event.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "endDate" : {
+      "description" : "The end date of the associated event.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "parent" : {
+      "description" : "A reference to another Edu-API Academic Session that serves as a parent `AcademicSession`.",
+      "$comment" : "Origin: AcademicSessionGUIDRef (DerivedType); A reference to an `AcademicSession` object that has an allocated sourcedId (`GUID`).",
+      "type" : "string"
+    },
+    "children" : {
+      "type" : "array",
+      "items" : {
+        "description" : "A reference to another Edu-API Academic Session that serves as a Child `AcademicSession`s.",
+        "$comment" : "Origin: AcademicSessionGUIDRef (DerivedType); A reference to an `AcademicSession` object that has an allocated sourcedId (`GUID`).",
+        "type" : "string"
+      }
+    },
+    "recordStatus" : {
+      "description" : "The status of this record. A record which is flagged 'toBeDeleted' is to be considered safe to delete. Systems can delete records that are flagged as such if they wish, but they are not required to do so.",
+      "$comment" : "Origin: RecordStatusTypeEnum (Enum); The set of values to describe the state of a record in the source system. For systems migrating from, or making use of OneRoster, deleted is to be considered synonymous with toBeDeleted.",
+      "type" : "string",
+      "enum" : [ "active", "deleted", "inactive" ]
+    },
+    "dateLastModified" : {
+      "description" : "A timestamp describing when this record was last modified.",
+      "$comment" : "Origin: DateTimeZ (DerivedType); A `DateTime` with the trailing timezone specifier included, e.g. `2021-09-07T02:09:59+02:00`",
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "extensions" : {
+      "$ref" : "#/$defs/academicSessionExtensions"
+    }
+  },
+  "required" : [ "sourcedId", "recordLanguage", "recordStatus" ],
+  "additionalProperties" : false,
+  "$defs" : {
+    "IdentifierEntry" : {
+      "description" : "A container to transmit additional needed identifiers",
+      "type" : "object",
+      "properties" : {
+        "identifier" : {
+          "description" : "An identifier.",
+          "$comment" : "Origin: Identifier (DerivedType); A `NormalizedString` that functions as an identifier.",
+          "type" : "string"
+        },
+        "identifierType" : {
+          "description" : "The identifier type.",
+          "$comment" : "Origin: IdentifierTypeEnum (EnumExt)",
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "systemId", "productId", "userName", "accountId", "emailAddress", "nationalIdentityNumber", "isbn", "issn", "lisSourcedId", "oneRosterSourcedId", "sisSourcedId", "ltiContextId", "ltiDeploymentId", "ltiToolId", "ltiPlatformId", "ltiUserId", "identifier" ]
+          }, {
+            "type" : "string",
+            "pattern" : "(ext:)[a-z|A-Z|0-9|.|-|_]+"
+          } ]
+        }
+      },
+      "required" : [ "identifier", "identifierType" ],
+      "additionalProperties" : false
+    },
+    "LanguageTypedString" : {
+      "description" : "A String with an associated language code.",
+      "type" : "object",
+      "properties" : {
+        "recordLanguage" : {
+          "description" : "The primary language used in the described entity.",
+          "$comment" : "Origin: LanguageCode (DerivedType); A language code [[BCP47]].",
+          "type" : "string",
+          "pattern" : "^[a-z]{2,4}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$"
+        },
+        "value" : {
+          "description" : "No description supplied.",
+          "$comment" : "Origin: String (PrimitiveType); Character strings.",
+          "type" : "string"
+        }
+      },
+      "required" : [ "recordLanguage", "value" ],
+      "additionalProperties" : false
+    },
+    "academicSessionExtensions" : {
+      "description" : "Extension properties related to education academic sessions",
+      "type" : "object",
+      "properties" : { },
+      "required" : [ ],
+      "additionalProperties" : true
+    }
+  }
+}
