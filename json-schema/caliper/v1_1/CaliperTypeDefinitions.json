@@ -1,0 +1,253 @@
+{
+  "schema": "http://json-schema.org/draft-04/schema#",
+  "id": "CaliperTypeDefinitions",
+  "type": "object",
+  "attempt": {
+    "oneOf": [
+      {
+        "$ref": "Attempt"
+      },
+      {
+        "type": "string"
+      }
+    ],
+    "title": "attempt",
+    "description": "The associated Attempt.",
+    "translations": {
+      "title": [
+        {
+          "en": "attempt"
+        }
+      ],
+      "description": [
+        {
+          "en": "The associated Attempt."
+        }
+      ]
+    }
+  },
+  "scoredBy": {
+    "oneOf": [
+      {
+        "$ref": "Organization"
+      },
+      {
+        "$ref": "CourseOffering"
+      },
+      {
+        "$ref": "CourseSection"
+      },
+      {
+        "$ref": "Group"
+      },
+      {
+        "$ref": "Person"
+      },
+      {
+        "$ref": "SoftwareApplication"
+      },
+      {
+        "$ref": "Agent"
+      },
+      {
+        "type": "string"
+      }
+    ],
+    "title": "scoredBy",
+    "description": "The Agent who scored or graded an Attempt.",
+    "translations": {
+      "title": [
+        {
+          "en": "scoredBy"
+        }
+      ],
+      "description": [
+        {
+          "en": "The Agent who scored or graded an Attempt."
+        }
+      ]
+    }
+  },
+  "extensions": {
+    "type": "object",
+    "title": "extensions",
+    "description": "An ordered collection of objects not defined by the Caliper Information Model.",
+    "translations": {
+      "title": [
+        {
+          "en": "extensions"
+        }
+      ],
+      "description": [
+        {
+          "en": "An ordered collection of objects not defined by the Caliper Information Model."
+        }
+      ]
+    }
+  },
+  "isPartOf": {
+    "oneOf": [
+      {
+        "$ref": "Agent"
+      },
+      {
+        "$ref": "Organization"
+      },
+      {
+        "$ref": "CourseOffering"
+      },
+      {
+        "$ref": "CourseSection"
+      },
+      {
+        "$ref": "Group"
+      },
+      {
+        "$ref": "Person"
+      },
+      {
+        "$ref": "SoftwareApplication"
+      },
+      {
+        "$ref": "Annotation"
+      },
+      {
+        "$ref": "BookmarkAnnotation"
+      },
+      {
+        "$ref": "HighlightAnnotation"
+      },
+      {
+        "$ref": "SharedAnnotation"
+      },
+      {
+        "$ref": "TagAnnotation"
+      },
+      {
+        "$ref": "Attempt"
+      },
+      {
+        "$ref": "DigitalResource"
+      },
+      {
+        "$ref": "AssignableDigitalResource"
+      },
+      {
+        "$ref": "Assessment"
+      },
+      {
+        "$ref": "AssessmentItem"
+      },
+      {
+        "$ref": "Chapter"
+      },
+      {
+        "$ref": "DigitalResourceCollection"
+      },
+      {
+        "$ref": "Forum"
+      },
+      {
+        "$ref": "Thread"
+      },
+      {
+        "$ref": "Document"
+      },
+      {
+        "$ref": "Frame"
+      },
+      {
+        "$ref": "MediaLocation"
+      },
+      {
+        "$ref": "MediaObject"
+      },
+      {
+        "$ref": "AudioObject"
+      },
+      {
+        "$ref": "ImageObject"
+      },
+      {
+        "$ref": "VideoObject"
+      },
+      {
+        "$ref": "Message"
+      },
+      {
+        "$ref": "Page"
+      },
+      {
+        "$ref": "Reading"
+      },
+      {
+        "$ref": "WebPage"
+      },
+      {
+        "$ref": "epubChapter"
+      },
+      {
+        "$ref": "epubPart"
+      },
+      {
+        "$ref": "epubSubChapter"
+      },
+      {
+        "$ref": "epubVolume"
+      },
+      {
+        "$ref": "LearningObjective"
+      },
+      {
+        "$ref": "Membership"
+      },
+      {
+        "$ref": "Response"
+      },
+      {
+        "$ref": "FillinBlankResponse"
+      },
+      {
+        "$ref": "MultipleChoiceResponse"
+      },
+      {
+        "$ref": "MultipleResponseResponse"
+      },
+      {
+        "$ref": "SelectTextResponse"
+      },
+      {
+        "$ref": "TrueFalseResponse"
+      },
+      {
+        "$ref": "Result"
+      },
+      {
+        "$ref": "Score"
+      },
+      {
+        "$ref": "Session"
+      },
+      {
+        "$ref": "LtiSession"
+      },
+      {
+        "type": "string"
+      }
+    ],
+    "title": "isPartOf",
+    "description": "A related Entity that includes or incorporates the resource as a part of its whole.",
+    "translations": {
+      "title": [
+        {
+          "en": "isPartOf"
+        }
+      ],
+      "description": [
+        {
+          "en": "A related Entity that includes or incorporates the resource as a part of its whole."
+        }
+      ]
+    }
+  }
+}

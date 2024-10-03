@@ -1,0 +1,21 @@
+{
+  "schema": "http://json-schema.org/draft-04/schema#",
+  "id": "Action",
+  "metaFormat": "http://purl.imsglobal.org/caliper/",
+  "type": "object",
+  "properties": {},
+  "title": "Action",
+  "description": "Caliper includes a vocabulary of actions for describing learning interactions. Each action is based on the past-tense form of an English (en-US) verb. An action can also indicate a change in a particular characteristic of the object (e.g., resolution, size, speed, volume).  Each action is also linked to a brief definition (\"gloss\") derived in whole or in part from Princeton University's WordNet® project in order to eliminate ambiguity and aid natural language processing.",
+  "translations": {
+    "title": [
+      {
+        "en": "Action"
+      }
+    ],
+    "description": [
+      {
+        "en": "Caliper includes a vocabulary of actions for describing learning interactions. Each action is based on the past-tense form of an English (en-US) verb. An action can also indicate a change in a particular characteristic of the object (e.g., resolution, size, speed, volume).  Each action is also linked to a brief definition (\"gloss\") derived in whole or in part from Princeton University's WordNet® project in order to eliminate ambiguity and aid natural language processing."
+      }
+    ]
+  }
+}

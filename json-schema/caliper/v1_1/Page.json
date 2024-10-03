@@ -1,0 +1,323 @@
+{
+  "schema": "http://json-schema.org/draft-04/schema#",
+  "id": "Page",
+  "metaFormat": "http://purl.imsglobal.org/caliper/",
+  "type": "object",
+  "properties": {
+    "extensions": {
+      "$ref": "CaliperTypeDefinitions#/extensions"
+    },
+    "isPartOf": {
+      "$ref": "CaliperTypeDefinitions#/isPartOf"
+    },
+    "id": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#string",
+      "maxLength": 2048,
+      "title": "id",
+      "description": "The Event or Entity identifier.  For an Event, the id MUST be a UUID expressed as a URN using the form urn:uuid:<UUID> per RFC 4122.  For Entities a valid IRI MUST be specified. The IRI MUST be unique and persistent. The IRI SHOULD also be dereferenceable, i.e., capable of returning a representation of the resource.  An Entity MAY be provisioned with a URI employing the URN scheme in cases where a Linked Data friendly HTTP URI is either unavailable or inappropriate.",
+      "translations": {
+        "title": [
+          {
+            "en": "id"
+          }
+        ],
+        "description": [
+          {
+            "en": "The Event or Entity identifier.  For an Event, the id MUST be a UUID expressed as a URN using the form urn:uuid:<UUID> per RFC 4122.  For Entities a valid IRI MUST be specified. The IRI MUST be unique and persistent. The IRI SHOULD also be dereferenceable, i.e., capable of returning a representation of the resource.  An Entity MAY be provisioned with a URI employing the URN scheme in cases where a Linked Data friendly HTTP URI is either unavailable or inappropriate."
+          }
+        ]
+      }
+    },
+    "version": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#string",
+      "maxLength": 64,
+      "title": "version",
+      "description": "A string value that designates the current form or version of the resource.",
+      "translations": {
+        "title": [
+          {
+            "en": "version"
+          }
+        ],
+        "description": [
+          {
+            "en": "A string value that designates the current form or version of the resource."
+          }
+        ]
+      }
+    },
+    "alignedLearningObjective": {
+      "items": {
+        "$ref": "LearningObjective"
+      },
+      "type": "array",
+      "title": "alignedLearningObjective",
+      "description": "An ordered collection of one or more LearningObjective entities that describe what a learner is expected to comprehend or accomplish after engaging with the resource.  Deprecated.  Use learningObjectives.",
+      "translations": {
+        "title": [
+          {
+            "en": "alignedLearningObjective"
+          }
+        ],
+        "description": [
+          {
+            "en": "An ordered collection of one or more LearningObjective entities that describe what a learner is expected to comprehend or accomplish after engaging with the resource.  Deprecated.  Use learningObjectives."
+          }
+        ]
+      }
+    },
+    "creators": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "Organization"
+          },
+          {
+            "$ref": "CourseOffering"
+          },
+          {
+            "$ref": "CourseSection"
+          },
+          {
+            "$ref": "Group"
+          },
+          {
+            "$ref": "Person"
+          },
+          {
+            "$ref": "SoftwareApplication"
+          },
+          {
+            "$ref": "Agent"
+          }
+        ]
+      },
+      "type": "array",
+      "title": "creators",
+      "description": "An ordered collection of Agent entities, typically of type Person, that are responsible for bringing resource into being",
+      "translations": {
+        "title": [
+          {
+            "en": "creators"
+          }
+        ],
+        "description": [
+          {
+            "en": "An ordered collection of Agent entities, typically of type Person, that are responsible for bringing resource into being"
+          }
+        ]
+      }
+    },
+    "learningObjectives": {
+      "items": {
+        "$ref": "LearningObjective"
+      },
+      "type": "array",
+      "title": "learningObjectives",
+      "description": "An ordered collection of one or more LearningObjective entities that describe what a learner is expected to comprehend or accomplish after engaging with the resource.",
+      "translations": {
+        "title": [
+          {
+            "en": "learningObjectives"
+          }
+        ],
+        "description": [
+          {
+            "en": "An ordered collection of one or more LearningObjective entities that describe what a learner is expected to comprehend or accomplish after engaging with the resource."
+          }
+        ]
+      }
+    },
+    "datePublished": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "format": "date-time",
+      "maxLength": 64,
+      "title": "datePublished",
+      "description": "A date and time value expressed with millisecond precision that provides the publication date of a resource.",
+      "translations": {
+        "title": [
+          {
+            "en": "datePublished"
+          }
+        ],
+        "description": [
+          {
+            "en": "A date and time value expressed with millisecond precision that provides the publication date of a resource."
+          }
+        ]
+      }
+    },
+    "keywords": {
+      "items": {
+        "type": "string",
+        "definedBy": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      "type": "array",
+      "title": "keywords",
+      "description": "An ordered collection of one or more string values that represent tags or labels used to identify the resource.",
+      "translations": {
+        "title": [
+          {
+            "en": "keywords"
+          }
+        ],
+        "description": [
+          {
+            "en": "An ordered collection of one or more string values that represent tags or labels used to identify the resource."
+          }
+        ]
+      }
+    },
+    "mediaType": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#string",
+      "maxLength": 128,
+      "title": "mediaType",
+      "description": "A string value drawn from the list of IANA approved media types and subtypes that identifies the file format of a resource.",
+      "translations": {
+        "title": [
+          {
+            "en": "mediaType"
+          }
+        ],
+        "description": [
+          {
+            "en": "A string value drawn from the list of IANA approved media types and subtypes that identifies the file format of a resource."
+          }
+        ]
+      }
+    },
+    "objectType": {
+      "type": "boolean",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#boolean",
+      "title": "objectType",
+      "description": "A string value that designates the resource type.",
+      "translations": {
+        "title": [
+          {
+            "en": "objectType"
+          }
+        ],
+        "description": [
+          {
+            "en": "A string value that designates the resource type."
+          }
+        ]
+      }
+    },
+    "dateCreated": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "format": "date-time",
+      "maxLength": 64,
+      "title": "dateCreated",
+      "description": "A date and time value expressed with millisecond precision that describes when an Entity was created.",
+      "translations": {
+        "title": [
+          {
+            "en": "dateCreated"
+          }
+        ],
+        "description": [
+          {
+            "en": "A date and time value expressed with millisecond precision that describes when an Entity was created."
+          }
+        ]
+      }
+    },
+    "dateModified": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "format": "date-time",
+      "maxLength": 64,
+      "title": "dateModified",
+      "description": "A date and time value expressed with millisecond precision that describes when an Entity was last changed or modified.",
+      "translations": {
+        "title": [
+          {
+            "en": "dateModified"
+          }
+        ],
+        "description": [
+          {
+            "en": "A date and time value expressed with millisecond precision that describes when an Entity was last changed or modified."
+          }
+        ]
+      }
+    },
+    "description": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#string",
+      "maxLength": 1024,
+      "title": "description",
+      "description": "A brief, plain-text representation of the resource.",
+      "translations": {
+        "title": [
+          {
+            "en": "description"
+          }
+        ],
+        "description": [
+          {
+            "en": "A brief, plain-text representation of the resource."
+          }
+        ]
+      }
+    },
+    "name": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#string",
+      "maxLength": 256,
+      "title": "name",
+      "description": "A string value comprising a word or phrase by which the resource is known.",
+      "translations": {
+        "title": [
+          {
+            "en": "name"
+          }
+        ],
+        "description": [
+          {
+            "en": "A string value comprising a word or phrase by which the resource is known."
+          }
+        ]
+      }
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^Page$"
+    },
+    "@context": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^http://purl.imsglobal.org/ctx/caliper/v1p1$"
+        },
+        {
+          "type": "array"
+        }
+      ]
+    }
+  },
+  "title": "Page",
+  "description": "A Caliper Page represents an item of paginated content.",
+  "translations": {
+    "title": [
+      {
+        "en": "Page"
+      }
+    ],
+    "description": [
+      {
+        "en": "A Caliper Page represents an item of paginated content."
+      }
+    ]
+  },
+  "required": [
+    "id",
+    "type"
+  ]
+}

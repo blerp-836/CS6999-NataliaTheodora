@@ -1,0 +1,399 @@
+{
+  "schema": "http://json-schema.org/draft-04/schema#",
+  "id": "Envelope",
+  "metaFormat": "http://purl.imsglobal.org/caliper/",
+  "type": "object",
+  "properties": {
+    "data": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "Entity"
+        },
+        {
+          "$ref": "Agent"
+        },
+        {
+          "$ref": "Organization"
+        },
+        {
+          "$ref": "CourseOffering"
+        },
+        {
+          "$ref": "CourseSection"
+        },
+        {
+          "$ref": "Group"
+        },
+        {
+          "$ref": "Person"
+        },
+        {
+          "$ref": "SoftwareApplication"
+        },
+        {
+          "$ref": "AggregateMeasure"
+        },
+        {
+          "$ref": "Annotation"
+        },
+        {
+          "$ref": "BookmarkAnnotation"
+        },
+        {
+          "$ref": "HighlightAnnotation"
+        },
+        {
+          "$ref": "SharedAnnotation"
+        },
+        {
+          "$ref": "TagAnnotation"
+        },
+        {
+          "$ref": "Attempt"
+        },
+        {
+          "$ref": "Collection"
+        },
+        {
+          "$ref": "AggregateMeasureCollection"
+        },
+        {
+          "$ref": "DigitalResourceCollection"
+        },
+        {
+          "$ref": "Assessment"
+        },
+        {
+          "$ref": "Forum"
+        },
+        {
+          "$ref": "Questionnaire"
+        },
+        {
+          "$ref": "Thread"
+        },
+        {
+          "$ref": "Survey"
+        },
+        {
+          "$ref": "Comment"
+        },
+        {
+          "$ref": "DigitalResource"
+        },
+        {
+          "$ref": "AssignableDigitalResource"
+        },
+        {
+          "$ref": "AssessmentItem"
+        },
+        {
+          "$ref": "Chapter"
+        },
+        {
+          "$ref": "Document"
+        },
+        {
+          "$ref": "Frame"
+        },
+        {
+          "$ref": "LtiLink"
+        },
+        {
+          "$ref": "MediaLocation"
+        },
+        {
+          "$ref": "MediaObject"
+        },
+        {
+          "$ref": "AudioObject"
+        },
+        {
+          "$ref": "ImageObject"
+        },
+        {
+          "$ref": "VideoObject"
+        },
+        {
+          "$ref": "Message"
+        },
+        {
+          "$ref": "Page"
+        },
+        {
+          "$ref": "Question"
+        },
+        {
+          "$ref": "DateTimeQuestion"
+        },
+        {
+          "$ref": "MultiselectQuestion"
+        },
+        {
+          "$ref": "OpenEndedQuestion"
+        },
+        {
+          "$ref": "RatingScaleQuestion"
+        },
+        {
+          "$ref": "QuestionnaireItem"
+        },
+        {
+          "$ref": "Reading"
+        },
+        {
+          "$ref": "SurveyInvitation"
+        },
+        {
+          "$ref": "WebPage"
+        },
+        {
+          "$ref": "epubChapter"
+        },
+        {
+          "$ref": "epubPart"
+        },
+        {
+          "$ref": "epubSubChapter"
+        },
+        {
+          "$ref": "epubVolume"
+        },
+        {
+          "$ref": "LearningObjective"
+        },
+        {
+          "$ref": "Link"
+        },
+        {
+          "$ref": "Membership"
+        },
+        {
+          "$ref": "Query"
+        },
+        {
+          "$ref": "Rating"
+        },
+        {
+          "$ref": "Response"
+        },
+        {
+          "$ref": "DateTimeResponse"
+        },
+        {
+          "$ref": "FillinBlankResponse"
+        },
+        {
+          "$ref": "MultiselectResponse"
+        },
+        {
+          "$ref": "MultipleChoiceResponse"
+        },
+        {
+          "$ref": "MultipleResponseResponse"
+        },
+        {
+          "$ref": "OpenEndedResponse"
+        },
+        {
+          "$ref": "RatingScaleResponse"
+        },
+        {
+          "$ref": "SelectTextResponse"
+        },
+        {
+          "$ref": "TrueFalseResponse"
+        },
+        {
+          "$ref": "Result"
+        },
+        {
+          "$ref": "Scale"
+        },
+        {
+          "$ref": "LikertScale"
+        },
+        {
+          "$ref": "MultiselectScale"
+        },
+        {
+          "$ref": "NumericScale"
+        },
+        {
+          "$ref": "Score"
+        },
+        {
+          "$ref": "SearchResponse"
+        },
+        {
+          "$ref": "Session"
+        },
+        {
+          "$ref": "LtiSession"
+        },
+        {
+          "$ref": "Event"
+        },
+        {
+          "$ref": "AnnotationEvent"
+        },
+        {
+          "$ref": "AssessmentEvent"
+        },
+        {
+          "$ref": "AssessmentItemEvent"
+        },
+        {
+          "$ref": "AssignableEvent"
+        },
+        {
+          "$ref": "FeedbackEvent"
+        },
+        {
+          "$ref": "ForumEvent"
+        },
+        {
+          "$ref": "GradeEvent"
+        },
+        {
+          "$ref": "MediaEvent"
+        },
+        {
+          "$ref": "MessageEvent"
+        },
+        {
+          "$ref": "NavigationEvent"
+        },
+        {
+          "$ref": "OutcomeEvent"
+        },
+        {
+          "$ref": "QuestionnaireEvent"
+        },
+        {
+          "$ref": "QuestionnaireItemEvent"
+        },
+        {
+          "$ref": "ReadingEvent"
+        },
+        {
+          "$ref": "ResourceManagementEvent"
+        },
+        {
+          "$ref": "SearchEvent"
+        },
+        {
+          "$ref": "SessionEvent"
+        },
+        {
+          "$ref": "SurveyEvent"
+        },
+        {
+          "$ref": "SurveyInvitationEvent"
+        },
+        {
+          "$ref": "ThreadEvent"
+        },
+        {
+          "$ref": "ToolLaunchEvent"
+        },
+        {
+          "$ref": "ToolUseEvent"
+        },
+        {
+          "$ref": "ViewEvent"
+        },
+        {
+          "$ref": ""
+        }
+      ],
+      "title": "data",
+      "description": "Envelope data array.",
+      "translations": {
+        "title": [
+          {
+            "en": "data"
+          }
+        ],
+        "description": [
+          {
+            "en": "Envelope data array."
+          }
+        ]
+      }
+    },
+    "dataVersion": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#string",
+      "pattern": "^http://purl.imsglobal.org/ctx/caliper/v1p2$",
+      "title": "dataVersion",
+      "description": "Envelope data payload Caliper version.",
+      "translations": {
+        "title": [
+          {
+            "en": "dataVersion"
+          }
+        ],
+        "description": [
+          {
+            "en": "Envelope data payload Caliper version."
+          }
+        ]
+      }
+    },
+    "sendTime": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "format": "date-time",
+      "title": "sendTime",
+      "description": "Envelope send time.",
+      "translations": {
+        "title": [
+          {
+            "en": "sendTime"
+          }
+        ],
+        "description": [
+          {
+            "en": "Envelope send time."
+          }
+        ]
+      }
+    },
+    "sensor": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#string",
+      "title": "sensor",
+      "description": "Sensor identifier.",
+      "translations": {
+        "title": [
+          {
+            "en": "sensor"
+          }
+        ],
+        "description": [
+          {
+            "en": "Sensor identifier."
+          }
+        ]
+      }
+    }
+  },
+  "title": "Envelope",
+  "description": "A Caliper Envelope is a container that is used to transmit one or more Caliper Events and/or Caliper Entity describes.",
+  "translations": {
+    "title": [
+      {
+        "en": "Envelope"
+      }
+    ],
+    "description": [
+      {
+        "en": "A Caliper Envelope is a container that is used to transmit one or more Caliper Events and/or Caliper Entity describes."
+      }
+    ]
+  }
+}

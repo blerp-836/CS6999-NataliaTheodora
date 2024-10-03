@@ -1,0 +1,1007 @@
+{
+  "schema": "http://json-schema.org/draft-04/schema#",
+  "id": "AssessmentEvent",
+  "metaFormat": "http://purl.imsglobal.org/caliper/",
+  "type": "object",
+  "properties": {
+    "extensions": {
+      "$ref": "CaliperTypeDefinitions#/extensions"
+    },
+    "id": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#string",
+      "maxLength": 2048,
+      "title": "id",
+      "description": "The Event or Entity identifier.  For an Event, the id MUST be a UUID expressed as a URN using the form urn:uuid:<UUID> per RFC 4122.  For Entities a valid IRI MUST be specified. The IRI MUST be unique and persistent. The IRI SHOULD also be dereferenceable, i.e., capable of returning a representation of the resource.  An Entity MAY be provisioned with a URI employing the URN scheme in cases where a Linked Data friendly HTTP URI is either unavailable or inappropriate.",
+      "translations": {
+        "title": [
+          {
+            "en": "id"
+          }
+        ],
+        "description": [
+          {
+            "en": "The Event or Entity identifier.  For an Event, the id MUST be a UUID expressed as a URN using the form urn:uuid:<UUID> per RFC 4122.  For Entities a valid IRI MUST be specified. The IRI MUST be unique and persistent. The IRI SHOULD also be dereferenceable, i.e., capable of returning a representation of the resource.  An Entity MAY be provisioned with a URI employing the URN scheme in cases where a Linked Data friendly HTTP URI is either unavailable or inappropriate."
+          }
+        ]
+      }
+    },
+    "actor": {
+      "oneOf": [
+        {
+          "$ref": "Organization"
+        },
+        {
+          "$ref": "CourseOffering"
+        },
+        {
+          "$ref": "CourseSection"
+        },
+        {
+          "$ref": "Group"
+        },
+        {
+          "$ref": "Person"
+        },
+        {
+          "$ref": "SoftwareApplication"
+        },
+        {
+          "$ref": "Agent"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "actor",
+      "description": "The Agent who initiated the Event, typically a Person, Organization or SoftwareApplication.",
+      "translations": {
+        "title": [
+          {
+            "en": "actor"
+          }
+        ],
+        "description": [
+          {
+            "en": "The Agent who initiated the Event, typically a Person, Organization or SoftwareApplication."
+          }
+        ]
+      }
+    },
+    "edApp": {
+      "oneOf": [
+        {
+          "$ref": "SoftwareApplication"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "edApp",
+      "description": "A SoftwareApplication that represents the application context within which an Event occurs.",
+      "translations": {
+        "title": [
+          {
+            "en": "edApp"
+          }
+        ],
+        "description": [
+          {
+            "en": "A SoftwareApplication that represents the application context within which an Event occurs."
+          }
+        ]
+      }
+    },
+    "federatedSession": {
+      "oneOf": [
+        {
+          "$ref": "LtiSession"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "federatedSession",
+      "description": "If an Event occurs within the context of an LTI tool launch, the federatedSession constitutes the tool consumer's LtiSession.",
+      "translations": {
+        "title": [
+          {
+            "en": "federatedSession"
+          }
+        ],
+        "description": [
+          {
+            "en": "If an Event occurs within the context of an LTI tool launch, the federatedSession constitutes the tool consumer's LtiSession."
+          }
+        ]
+      }
+    },
+    "generated": {
+      "oneOf": [
+        {
+          "$ref": "Agent"
+        },
+        {
+          "$ref": "Organization"
+        },
+        {
+          "$ref": "CourseOffering"
+        },
+        {
+          "$ref": "CourseSection"
+        },
+        {
+          "$ref": "Group"
+        },
+        {
+          "$ref": "Person"
+        },
+        {
+          "$ref": "SoftwareApplication"
+        },
+        {
+          "$ref": "Annotation"
+        },
+        {
+          "$ref": "BookmarkAnnotation"
+        },
+        {
+          "$ref": "HighlightAnnotation"
+        },
+        {
+          "$ref": "SharedAnnotation"
+        },
+        {
+          "$ref": "TagAnnotation"
+        },
+        {
+          "$ref": "Attempt"
+        },
+        {
+          "$ref": "DigitalResource"
+        },
+        {
+          "$ref": "AssignableDigitalResource"
+        },
+        {
+          "$ref": "Assessment"
+        },
+        {
+          "$ref": "AssessmentItem"
+        },
+        {
+          "$ref": "Chapter"
+        },
+        {
+          "$ref": "DigitalResourceCollection"
+        },
+        {
+          "$ref": "Forum"
+        },
+        {
+          "$ref": "Thread"
+        },
+        {
+          "$ref": "Document"
+        },
+        {
+          "$ref": "Frame"
+        },
+        {
+          "$ref": "MediaLocation"
+        },
+        {
+          "$ref": "MediaObject"
+        },
+        {
+          "$ref": "AudioObject"
+        },
+        {
+          "$ref": "ImageObject"
+        },
+        {
+          "$ref": "VideoObject"
+        },
+        {
+          "$ref": "Message"
+        },
+        {
+          "$ref": "Page"
+        },
+        {
+          "$ref": "Reading"
+        },
+        {
+          "$ref": "WebPage"
+        },
+        {
+          "$ref": "epubChapter"
+        },
+        {
+          "$ref": "epubPart"
+        },
+        {
+          "$ref": "epubSubChapter"
+        },
+        {
+          "$ref": "epubVolume"
+        },
+        {
+          "$ref": "LearningObjective"
+        },
+        {
+          "$ref": "Membership"
+        },
+        {
+          "$ref": "Response"
+        },
+        {
+          "$ref": "FillinBlankResponse"
+        },
+        {
+          "$ref": "MultipleChoiceResponse"
+        },
+        {
+          "$ref": "MultipleResponseResponse"
+        },
+        {
+          "$ref": "SelectTextResponse"
+        },
+        {
+          "$ref": "TrueFalseResponse"
+        },
+        {
+          "$ref": "Result"
+        },
+        {
+          "$ref": "Score"
+        },
+        {
+          "$ref": "Session"
+        },
+        {
+          "$ref": "LtiSession"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "generated",
+      "description": "An Entity created or generated as a result of an interaction between an actor and an object.",
+      "translations": {
+        "title": [
+          {
+            "en": "generated"
+          }
+        ],
+        "description": [
+          {
+            "en": "An Entity created or generated as a result of an interaction between an actor and an object."
+          }
+        ]
+      }
+    },
+    "group": {
+      "oneOf": [
+        {
+          "$ref": "CourseOffering"
+        },
+        {
+          "$ref": "CourseSection"
+        },
+        {
+          "$ref": "Group"
+        },
+        {
+          "$ref": "Organization"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "group",
+      "description": "An Organization that represents the group or organizational context within which an Event occurs.",
+      "translations": {
+        "title": [
+          {
+            "en": "group"
+          }
+        ],
+        "description": [
+          {
+            "en": "An Organization that represents the group or organizational context within which an Event occurs."
+          }
+        ]
+      }
+    },
+    "membership": {
+      "oneOf": [
+        {
+          "$ref": "Membership"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "membership",
+      "description": "The relationship between the actor and the group in terms of roles assigned and current status.",
+      "translations": {
+        "title": [
+          {
+            "en": "membership"
+          }
+        ],
+        "description": [
+          {
+            "en": "The relationship between the actor and the group in terms of roles assigned and current status."
+          }
+        ]
+      }
+    },
+    "object": {
+      "oneOf": [
+        {
+          "$ref": "Agent"
+        },
+        {
+          "$ref": "Organization"
+        },
+        {
+          "$ref": "CourseOffering"
+        },
+        {
+          "$ref": "CourseSection"
+        },
+        {
+          "$ref": "Group"
+        },
+        {
+          "$ref": "Person"
+        },
+        {
+          "$ref": "SoftwareApplication"
+        },
+        {
+          "$ref": "Annotation"
+        },
+        {
+          "$ref": "BookmarkAnnotation"
+        },
+        {
+          "$ref": "HighlightAnnotation"
+        },
+        {
+          "$ref": "SharedAnnotation"
+        },
+        {
+          "$ref": "TagAnnotation"
+        },
+        {
+          "$ref": "Attempt"
+        },
+        {
+          "$ref": "DigitalResource"
+        },
+        {
+          "$ref": "AssignableDigitalResource"
+        },
+        {
+          "$ref": "Assessment"
+        },
+        {
+          "$ref": "AssessmentItem"
+        },
+        {
+          "$ref": "Chapter"
+        },
+        {
+          "$ref": "DigitalResourceCollection"
+        },
+        {
+          "$ref": "Forum"
+        },
+        {
+          "$ref": "Thread"
+        },
+        {
+          "$ref": "Document"
+        },
+        {
+          "$ref": "Frame"
+        },
+        {
+          "$ref": "MediaLocation"
+        },
+        {
+          "$ref": "MediaObject"
+        },
+        {
+          "$ref": "AudioObject"
+        },
+        {
+          "$ref": "ImageObject"
+        },
+        {
+          "$ref": "VideoObject"
+        },
+        {
+          "$ref": "Message"
+        },
+        {
+          "$ref": "Page"
+        },
+        {
+          "$ref": "Reading"
+        },
+        {
+          "$ref": "WebPage"
+        },
+        {
+          "$ref": "epubChapter"
+        },
+        {
+          "$ref": "epubPart"
+        },
+        {
+          "$ref": "epubSubChapter"
+        },
+        {
+          "$ref": "epubVolume"
+        },
+        {
+          "$ref": "LearningObjective"
+        },
+        {
+          "$ref": "Membership"
+        },
+        {
+          "$ref": "Response"
+        },
+        {
+          "$ref": "FillinBlankResponse"
+        },
+        {
+          "$ref": "MultipleChoiceResponse"
+        },
+        {
+          "$ref": "MultipleResponseResponse"
+        },
+        {
+          "$ref": "SelectTextResponse"
+        },
+        {
+          "$ref": "TrueFalseResponse"
+        },
+        {
+          "$ref": "Result"
+        },
+        {
+          "$ref": "Score"
+        },
+        {
+          "$ref": "Session"
+        },
+        {
+          "$ref": "LtiSession"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "object",
+      "description": "An Entity that an Event actor interacts with as described by the Event action.",
+      "translations": {
+        "title": [
+          {
+            "en": "object"
+          }
+        ],
+        "description": [
+          {
+            "en": "An Entity that an Event actor interacts with as described by the Event action."
+          }
+        ]
+      }
+    },
+    "referrer": {
+      "oneOf": [
+        {
+          "$ref": "Agent"
+        },
+        {
+          "$ref": "Organization"
+        },
+        {
+          "$ref": "CourseOffering"
+        },
+        {
+          "$ref": "CourseSection"
+        },
+        {
+          "$ref": "Group"
+        },
+        {
+          "$ref": "Person"
+        },
+        {
+          "$ref": "SoftwareApplication"
+        },
+        {
+          "$ref": "Annotation"
+        },
+        {
+          "$ref": "BookmarkAnnotation"
+        },
+        {
+          "$ref": "HighlightAnnotation"
+        },
+        {
+          "$ref": "SharedAnnotation"
+        },
+        {
+          "$ref": "TagAnnotation"
+        },
+        {
+          "$ref": "Attempt"
+        },
+        {
+          "$ref": "DigitalResource"
+        },
+        {
+          "$ref": "AssignableDigitalResource"
+        },
+        {
+          "$ref": "Assessment"
+        },
+        {
+          "$ref": "AssessmentItem"
+        },
+        {
+          "$ref": "Chapter"
+        },
+        {
+          "$ref": "DigitalResourceCollection"
+        },
+        {
+          "$ref": "Forum"
+        },
+        {
+          "$ref": "Thread"
+        },
+        {
+          "$ref": "Document"
+        },
+        {
+          "$ref": "Frame"
+        },
+        {
+          "$ref": "MediaLocation"
+        },
+        {
+          "$ref": "MediaObject"
+        },
+        {
+          "$ref": "AudioObject"
+        },
+        {
+          "$ref": "ImageObject"
+        },
+        {
+          "$ref": "VideoObject"
+        },
+        {
+          "$ref": "Message"
+        },
+        {
+          "$ref": "Page"
+        },
+        {
+          "$ref": "Reading"
+        },
+        {
+          "$ref": "WebPage"
+        },
+        {
+          "$ref": "epubChapter"
+        },
+        {
+          "$ref": "epubPart"
+        },
+        {
+          "$ref": "epubSubChapter"
+        },
+        {
+          "$ref": "epubVolume"
+        },
+        {
+          "$ref": "LearningObjective"
+        },
+        {
+          "$ref": "Membership"
+        },
+        {
+          "$ref": "Response"
+        },
+        {
+          "$ref": "FillinBlankResponse"
+        },
+        {
+          "$ref": "MultipleChoiceResponse"
+        },
+        {
+          "$ref": "MultipleResponseResponse"
+        },
+        {
+          "$ref": "SelectTextResponse"
+        },
+        {
+          "$ref": "TrueFalseResponse"
+        },
+        {
+          "$ref": "Result"
+        },
+        {
+          "$ref": "Score"
+        },
+        {
+          "$ref": "Session"
+        },
+        {
+          "$ref": "LtiSession"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "referrer",
+      "description": "An Entity that represents the referring context within which an Event occurs.  A SoftwareApplication or DigitalResource will typically constitute the referring context.",
+      "translations": {
+        "title": [
+          {
+            "en": "referrer"
+          }
+        ],
+        "description": [
+          {
+            "en": "An Entity that represents the referring context within which an Event occurs.  A SoftwareApplication or DigitalResource will typically constitute the referring context."
+          }
+        ]
+      }
+    },
+    "session": {
+      "oneOf": [
+        {
+          "$ref": "LtiSession"
+        },
+        {
+          "$ref": "Session"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "session",
+      "description": "The current user Session.",
+      "translations": {
+        "title": [
+          {
+            "en": "session"
+          }
+        ],
+        "description": [
+          {
+            "en": "The current user Session."
+          }
+        ]
+      }
+    },
+    "target": {
+      "oneOf": [
+        {
+          "$ref": "Agent"
+        },
+        {
+          "$ref": "Organization"
+        },
+        {
+          "$ref": "CourseOffering"
+        },
+        {
+          "$ref": "CourseSection"
+        },
+        {
+          "$ref": "Group"
+        },
+        {
+          "$ref": "Person"
+        },
+        {
+          "$ref": "SoftwareApplication"
+        },
+        {
+          "$ref": "Annotation"
+        },
+        {
+          "$ref": "BookmarkAnnotation"
+        },
+        {
+          "$ref": "HighlightAnnotation"
+        },
+        {
+          "$ref": "SharedAnnotation"
+        },
+        {
+          "$ref": "TagAnnotation"
+        },
+        {
+          "$ref": "Attempt"
+        },
+        {
+          "$ref": "DigitalResource"
+        },
+        {
+          "$ref": "AssignableDigitalResource"
+        },
+        {
+          "$ref": "Assessment"
+        },
+        {
+          "$ref": "AssessmentItem"
+        },
+        {
+          "$ref": "Chapter"
+        },
+        {
+          "$ref": "DigitalResourceCollection"
+        },
+        {
+          "$ref": "Forum"
+        },
+        {
+          "$ref": "Thread"
+        },
+        {
+          "$ref": "Document"
+        },
+        {
+          "$ref": "Frame"
+        },
+        {
+          "$ref": "MediaLocation"
+        },
+        {
+          "$ref": "MediaObject"
+        },
+        {
+          "$ref": "AudioObject"
+        },
+        {
+          "$ref": "ImageObject"
+        },
+        {
+          "$ref": "VideoObject"
+        },
+        {
+          "$ref": "Message"
+        },
+        {
+          "$ref": "Page"
+        },
+        {
+          "$ref": "Reading"
+        },
+        {
+          "$ref": "WebPage"
+        },
+        {
+          "$ref": "epubChapter"
+        },
+        {
+          "$ref": "epubPart"
+        },
+        {
+          "$ref": "epubSubChapter"
+        },
+        {
+          "$ref": "epubVolume"
+        },
+        {
+          "$ref": "LearningObjective"
+        },
+        {
+          "$ref": "Membership"
+        },
+        {
+          "$ref": "Response"
+        },
+        {
+          "$ref": "FillinBlankResponse"
+        },
+        {
+          "$ref": "MultipleChoiceResponse"
+        },
+        {
+          "$ref": "MultipleResponseResponse"
+        },
+        {
+          "$ref": "SelectTextResponse"
+        },
+        {
+          "$ref": "TrueFalseResponse"
+        },
+        {
+          "$ref": "Result"
+        },
+        {
+          "$ref": "Score"
+        },
+        {
+          "$ref": "Session"
+        },
+        {
+          "$ref": "LtiSession"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "target",
+      "description": "An Entity that represents a particular segment or location within an Event object.",
+      "translations": {
+        "title": [
+          {
+            "en": "target"
+          }
+        ],
+        "description": [
+          {
+            "en": "An Entity that represents a particular segment or location within an Event object."
+          }
+        ]
+      }
+    },
+    "action": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#string",
+      "enum": [
+        "Abandoned",
+        "Activated",
+        "Added",
+        "Attached",
+        "Bookmarked",
+        "ChangedResolution",
+        "ChangedSize",
+        "ChangedSpeed",
+        "ChangedVolume",
+        "Classified",
+        "ClosedPopout",
+        "Commented",
+        "Completed",
+        "Created",
+        "Deactivated",
+        "Deleted",
+        "Described",
+        "DisabledClosedCaptioning",
+        "Disliked",
+        "EnabledClosedCaptioning",
+        "Ended",
+        "EnteredFullScreen",
+        "ExitedFullScreen",
+        "ForwardedTo",
+        "Graded",
+        "Hid",
+        "Highlighted",
+        "Identified",
+        "JumpedTo",
+        "Liked",
+        "Linked",
+        "LoggedIn",
+        "LoggedOut",
+        "MarkedAsRead",
+        "MarkedAsUnread",
+        "Modified",
+        "Muted",
+        "NavigatedTo",
+        "OpenedPopout",
+        "Paused",
+        "Posted",
+        "Questioned",
+        "Ranked",
+        "Recommended",
+        "Removed",
+        "Reset",
+        "Restarted",
+        "Resumed",
+        "Retrieved",
+        "Reviewed",
+        "Rewound",
+        "Searched",
+        "Shared",
+        "Showed",
+        "Skipped",
+        "Started",
+        "Submitted",
+        "Subscribed",
+        "Tagged",
+        "TimedOut",
+        "Unmuted",
+        "Unsubscribed",
+        "Used",
+        "Viewed"
+      ],
+      "maxLength": 256,
+      "title": "action",
+      "description": "The action or predicate that binds the Event actor or subject to the Event object.",
+      "translations": {
+        "title": [
+          {
+            "en": "action"
+          }
+        ],
+        "description": [
+          {
+            "en": "The action or predicate that binds the Event actor or subject to the Event object."
+          }
+        ]
+      }
+    },
+    "eventTime": {
+      "type": "string",
+      "definedBy": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "format": "date-time",
+      "maxLength": 64,
+      "title": "eventTime",
+      "description": "A date and time value expressed with millisecond precision that indicates when an Event occurred.",
+      "translations": {
+        "title": [
+          {
+            "en": "eventTime"
+          }
+        ],
+        "description": [
+          {
+            "en": "A date and time value expressed with millisecond precision that indicates when an Event occurred."
+          }
+        ]
+      }
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^AssessmentEvent$"
+    },
+    "@context": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^http://purl.imsglobal.org/ctx/caliper/v1p1$"
+        },
+        {
+          "type": "array"
+        }
+      ]
+    }
+  },
+  "title": "AssessmentEvent",
+  "description": "A Caliper AssessmentEvent models learner interactions with assessments instruments such as online tests or quizzes.",
+  "translations": {
+    "title": [
+      {
+        "en": "AssessmentEvent"
+      }
+    ],
+    "description": [
+      {
+        "en": "A Caliper AssessmentEvent models learner interactions with assessments instruments such as online tests or quizzes."
+      }
+    ]
+  },
+  "required": [
+    "type",
+    "@context",
+    "id",
+    "actor",
+    "action",
+    "object",
+    "eventTime"
+  ]
+}
