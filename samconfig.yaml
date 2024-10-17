@@ -1,0 +1,85 @@
+# More information about the configuration file can be found here:
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html
+version: 0.1
+
+default:
+  global:
+    parameters:
+      stack_name: reference-data-pipeline
+      region: us-east-1
+
+  build:
+    parameters:
+      parallel: true
+
+  validate:
+    parameters:
+      lint: true
+
+  package:
+    parameters:
+      resolve_s3: true
+  
+  deploy:
+    parameters:
+      capabilities: CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
+      confirm_changeset: true
+      resolve_s3: true
+      resolve_image_repos: true
+      disable_rollback: false
+      s3_prefix: reference-data-pipeline
+      tags: env=dev name=reference-data-pipeline
+      parameter_overrides: "myUnusedParam=myUnusedExampleValue"
+
+  sync:
+    parameters:
+      watch: true
+
+  local_start_api:
+    parameters:
+      warm_containers: EAGER
+
+  local_start_lambda:
+    parameters:
+      warm_containers: EAGER
+
+qa:
+  global:
+    parameters:
+      stack_name: reference-data-pipeline-qa
+      region: us-east-1
+
+  build:
+    parameters:
+      parallel: true
+
+  validate:
+    parameters:
+      lint: true
+
+  package:
+    parameters:
+      resolve_s3: true
+  
+  deploy:
+    parameters:
+      capabilities: CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
+      confirm_changeset: true
+      resolve_s3: true
+      resolve_image_repos: true
+      disable_rollback: false
+      s3_prefix: reference-data-pipeline-qa
+      tags: env=qa name=reference-data-pipeline-qa
+      parameter_overrides: "myUnusedParam=myUnusedExampleValue"
+
+  sync:
+    parameters:
+      watch: true
+
+  local_start_api:
+    parameters:
+      warm_containers: EAGER
+
+  local_start_lambda:
+    parameters:
+      warm_containers: EAGER

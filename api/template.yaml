@@ -1,0 +1,217 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Reference API for Education Data Analytics Pipeline
+
+  SAM Template for the API of the reference pipeline
+
+Parameters:
+  CognitoUserPoolArn:
+    Type: String
+    Description: ARN of the Cognito User Pool
+
+Resources:
+
+  AnalyticsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: api
+      Auth:
+        DefaultAuthorizer: ClientCognitoAuthorizer
+        Authorizers:
+          ClientCognitoAuthorizer:
+            UserPoolArn: !Ref CognitoUserPoolArn
+            AuthorizationScopes:
+              - analytics/api
+#      TODO: author API documentation
+#      SAM will automatically generate this API documentation
+#      
+#      DefinitionBody:
+#        Fn::Transform:
+#          Name: AWS::Include
+#          Parameters:
+#            Location: ./openapi.yaml
+
+#  GenerateFunction:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      Handler: generate.lambdaHandler
+#      CodeUri: generate/
+#      Runtime: nodejs20.x
+#      Architectures:
+#        - x86_64
+#      Events:
+#        EduApiData:
+#          Type: Api
+#          Properties:
+#            RestApiId: !Ref AnalyticsApi
+#            Path: /generate/{nameSpace}/{version}/{schema}
+#            Method: GET
+#      Environment:
+#        Variables:
+#          NODE_OPTIONS: --enable-source-maps
+#      Layers:
+#        - !Ref SchemaLayer
+#      Policies:
+#        - AWSLambdaBasicExecutionRole
+#    Metadata: # Manage esbuild properties
+#      BuildMethod: esbuild
+#      BuildProperties:
+#        Minify: false
+#        Target: "es2020"
+#        Sourcemap: true
+#        EntryPoints: 
+#          - generate.ts
+
+  # Remove this at a later date
+  # just needed to verify that authentication applies to the root of the API
+  AppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      Runtime: nodejs20.x
+      CodeUri: src/
+      Events:
+        RootEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AnalyticsApi
+            Path: /
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+
+  EduApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: eduapi.lambdaHandler
+      CodeUri: eduapi/
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Events:
+        EduApiData:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AnalyticsApi
+            Path: /eduapi/{version}/{schema}
+            Method: POST
+      Environment:
+        Variables:
+          NODE_OPTIONS: --enable-source-maps
+      Layers:
+        - !Ref SchemaLayer
+      Policies:
+        - AWSLambdaBasicExecutionRole
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+          - eduapi.ts
+        
+  CaliperFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: caliper.lambdaHandler
+      CodeUri: caliper/
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Events:
+        EduApiData:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AnalyticsApi
+            Path: /caliper
+            Method: POST
+      Environment:
+        Variables:
+          NODE_OPTIONS: --enable-source-maps
+      Layers:
+        - !Ref SchemaLayer
+      Policies:
+        - AWSLambdaBasicExecutionRole
+#        - EduApiSQSInjestQueueAccessPolicy:
+#            QueueName: !GetAtt EduApiSQSInjestQueue.QueueName
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+          - caliper.ts
+
+  SchemaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: schemaDocs
+      ContentUri: ./json-schema
+      CompatibleRuntimes:
+        - nodejs20.x
+
+#  CaliperSQSInjestQueue:
+#    Type: AWS::SQS::Queue
+#    Properties:
+#      QueueName: eduapi-sqs-injest-queue
+#
+#  CaliperSQSQueuePolicy:
+#    Type: AWS::SQS::QueuePolicy
+#    Properties:
+#      Queues:
+#        - !Ref CaliperSQSInjestQueue
+#      PolicyDocument:
+#        Version: "2012-10-17"
+#        Statement:
+#          - Effect: Allow
+#            Principal: "*"
+#            Action: "sqs:SendMessage"
+#            Resource: !GetAtt CaliperSQSInjestQueue.Arn
+#            Condition:
+#              ArnEquals:
+#                "aws:SourceArn": !Ref AnalyticsApi
+#
+#  CaliperSQSInjestEventSource:
+#    Type: AWS::Lambda::EventSourceMapping
+#    Properties:
+#      FunctionName: !Ref CaliperSQSInjestFunction
+#      EventSourceArn: !GetAtt CaliperSQSInjestQueue.Arn
+#      BatchSize: 1
+#
+#  CaliperSQSInjestFunction:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      Handler: eduapi-sqs.lambdaHandler
+#      CodeUri: eduapi-sqs/
+#      Runtime: nodejs20.x
+#      Architectures:
+#        - x86_64
+#      Events:
+#        CaliperData:
+#          Type: SQS
+#          Properties:
+#            Queue: !GetAtt CaliperSQSInjestQueue.Arn
+#      Environment:
+#        Variables:
+#          NODE_OPTIONS: --enable-source-maps
+#      Layers:
+#        - !Ref SchemaLayer
+#      Policies:
+#        - AWSLambdaBasicExecutionRole
+#    Metadata:
+#      BuildMethod: esbuild
+#      BuildProperties:
+#        Minify: false
+#        Target: "es2020"
+#        Sourcemap: true
+#        EntryPoints: 
+#          - eduapi-sqs.ts
+
+Outputs:
+
+  AnalyticsApiEndpoint:
+    Description: API Endpoint
+    Value: !Sub "https://${AnalyticsApi}.execute-api.${AWS::Region}.amazonaws.com/api"

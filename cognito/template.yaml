@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Cognito auth resources for API Gateway
+
+  SAM Template for auth resources
+
+Parameters:
+  SSMPrefix:
+    Type: String
+
+Resources:
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AWS::StackName}-UserPool
+      AutoVerifiedAttributes:
+        - email
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref SSMPrefix
+      UserPoolId: !Ref CognitoUserPool
+
+  UserPoolSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub /${SSMPrefix}/auth/user-pool-id
+      Value: !Ref CognitoUserPool
+
+  UserPoolARNSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub /${SSMPrefix}/auth/user-pool-arn
+      Value: !GetAtt CognitoUserPool.Arn
+
+  AnalyticsResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      Identifier: analytics
+      Name: analytics
+      Scopes:
+        - ScopeName: api
+          ScopeDescription: Allow api access
+
+  CaliperUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn:
+      - AnalyticsResourceServer
+    Properties:
+      ClientName: caliper
+      GenerateSecret: true
+      UserPoolId: !Ref CognitoUserPool
+      EnableTokenRevocation: true
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthScopes:
+        - analytics/api
+      AllowedOAuthFlowsUserPoolClient: true
+
+  CaliperUserPoolAppClientSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub /${SSMPrefix}/auth/caliper-user-pool-client-id
+      Value: !Ref CaliperUserPoolClient
+
+  EduApiUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn:
+      - AnalyticsResourceServer
+    Properties:
+      ClientName: eduapi
+      GenerateSecret: true
+      UserPoolId: !Ref CognitoUserPool
+      EnableTokenRevocation: true
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthScopes:
+        - analytics/api
+      AllowedOAuthFlowsUserPoolClient: true
+
+  EduApiUserPoolAppClientSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub /${SSMPrefix}/auth/eduapi-user-pool-client-id
+      Value: !Ref EduApiUserPoolClient
+
+Outputs:
+  CognitoUserPoolId:
+    Description: "Cognito User Pool ID"
+    Value: !Ref CognitoUserPool
+
+  CognitoUserPoolArn:
+    Description: "Cognito User Pool ARN"
+    Value: !GetAtt CognitoUserPool.Arn
+
+  CaliperAppClientId:
+    Description: "Cognito App Client ID for Caliper"
+    Value: !Ref CaliperUserPoolClient
+
+  EduApiAppClientId:
+    Description: "Cognito App Client ID for EduAPI"
+    Value: !Ref EduApiUserPoolClient
+
+  UserPoolARNSSM:
+    Description: "UserPool ID"
+    Value: !Ref UserPoolARNSSM
