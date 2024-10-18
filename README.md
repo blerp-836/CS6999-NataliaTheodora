@@ -16,4 +16,7 @@
     * preferably, use temporary credentials provided by the AWS Identity Center access portal
 1. run sam deploy --config-env qa
     * if you omit "--config-env qa", SAM will deploy the default environment
-
+1. Once the deploy is complete, the output will  include the URL of the API
+1. Obtain the client ids and secrets from the AWS Console
+    *  Cognito->User Pools->App Integration->App client list
+ 
