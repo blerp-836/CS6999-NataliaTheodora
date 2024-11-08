@@ -1,0 +1,31 @@
+{
+  "name": "custom-resource-lambda",
+  "version": "1.0.0",
+  "description": "Custom resource Lambda function for CloudFormation",
+  "main": "customInvoker.js",
+  "repository": "https://github.com/1EdTech/HEReferenceDataPipeline",
+  "author": "1EdTech & Unicon",
+  "license": "MIT",
+  "scripts": {
+    "unit": "jest",
+    "lint": "eslint '*.ts' --quiet --fix",
+    "compile": "tsc",
+    "test": "npm run compile && npm run unit"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "cloudformation",
+    "custom-resource"
+  ],
+  "dependencies": {
+    "@aws-sdk/client-lambda": "^3.370.0",
+    "cfn-response-async": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.119",
+    "@types/node": "^20.4.2",
+    "esbuild": "^0.18.11",
+    "typescript": "^5.1.6"
+  }
+}

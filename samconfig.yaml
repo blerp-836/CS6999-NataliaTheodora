@@ -22,14 +22,14 @@ default:
   
   deploy:
     parameters:
-      capabilities: CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
+      capabilities: CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM
       confirm_changeset: true
       resolve_s3: true
       resolve_image_repos: true
       disable_rollback: false
       s3_prefix: reference-data-pipeline
       tags: env=dev name=reference-data-pipeline
-      parameter_overrides: "myUnusedParam=myUnusedExampleValue"
+      parameter_overrides: "pEnv=dev"
 
   sync:
     parameters:
@@ -70,7 +70,7 @@ qa:
       disable_rollback: false
       s3_prefix: reference-data-pipeline-qa
       tags: env=qa name=reference-data-pipeline-qa
-      parameter_overrides: "myUnusedParam=myUnusedExampleValue"
+      parameter_overrides: "pEnv=qa"
 
   sync:
     parameters:

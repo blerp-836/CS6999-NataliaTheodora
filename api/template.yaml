@@ -9,7 +9,25 @@ Parameters:
   CognitoUserPoolArn:
     Type: String
     Description: ARN of the Cognito User Pool
-
+  SensitiveDBIamUser:
+    Type: String
+    Description: The IAM username with access to the sensitive data database
+  SensitiveDBHost:
+    Description: Database host name
+    Type: String  
+  SensitiveDBName:
+    Description: Database Name
+    Type: String  
+  SensitiveDBPort:
+    Description: TCP/IP Port for the Database Instance
+    Type: Number
+    Default: 5432
+  SensitiveDBSecurityGroup:
+    Description: Security Group for the Database Instance
+    Type: String
+  PrivateSubnets:
+    Description: Private subnets within the same VPC as the database
+    Type: List<AWS::EC2::Subnet::Id>
 Resources:
 
   AnalyticsApi:
@@ -35,7 +53,7 @@ Resources:
 #  GenerateFunction:
 #    Type: AWS::Serverless::Function
 #    Properties:
-#      Handler: generate.lambdaHandler
+#      Handler: generateData.lambdaHandler
 #      CodeUri: generate/
 #      Runtime: nodejs20.x
 #      Architectures:
@@ -61,7 +79,7 @@ Resources:
 #        Target: "es2020"
 #        Sourcemap: true
 #        EntryPoints: 
-#          - generate.ts
+#          - generateData.ts
 
   # Remove this at a later date
   # just needed to verify that authentication applies to the root of the API
@@ -87,8 +105,15 @@ Resources:
       Handler: eduapi.lambdaHandler
       CodeUri: eduapi/
       Runtime: nodejs20.x
+      MemorySize: 256
+      Timeout: 30
       Architectures:
         - x86_64
+      VpcConfig: 
+        SecurityGroupIds: 
+          - !Ref SensitiveDBSecurityGroup
+        SubnetIds: !Ref PrivateSubnets
+        Ipv6AllowedForDualStack: true
       Events:
         EduApiData:
           Type: Api
@@ -98,11 +123,25 @@ Resources:
             Method: POST
       Environment:
         Variables:
+          AnonymizeSQSQueueUrl: !Ref AnonymizeSQSInjestQueue
+          DBHost: !Ref SensitiveDBHost
+          DBPort: !Ref SensitiveDBPort
+          DBName: !Ref SensitiveDBName
+          DBIamUser: !Ref SensitiveDBIamUser
+          AwsRegion: !Ref AWS::Region
           NODE_OPTIONS: --enable-source-maps
       Layers:
         - !Ref SchemaLayer
       Policies:
         - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Sid: SSMDescribeParametersPolicy
+              Effect: Allow
+              Action:
+                - rds-db:connect
+              Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${SensitiveDBIamUser}
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt AnonymizeSQSInjestQueue.QueueName
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -118,8 +157,15 @@ Resources:
       Handler: caliper.lambdaHandler
       CodeUri: caliper/
       Runtime: nodejs20.x
+      MemorySize: 256
+      Timeout: 30
       Architectures:
         - x86_64
+      VpcConfig: 
+        SecurityGroupIds: 
+          - !Ref SensitiveDBSecurityGroup
+        SubnetIds: !Ref PrivateSubnets
+        Ipv6AllowedForDualStack: true
       Events:
         EduApiData:
           Type: Api
@@ -129,13 +175,25 @@ Resources:
             Method: POST
       Environment:
         Variables:
+          AnonymizeSQSQueueUrl: !Ref AnonymizeSQSInjestQueue
+          DBHost: !Ref SensitiveDBHost
+          DBPort: !Ref SensitiveDBPort
+          DBName: !Ref SensitiveDBName
+          DBIamUser: !Ref SensitiveDBIamUser
+          AwsRegion: !Ref AWS::Region
           NODE_OPTIONS: --enable-source-maps
       Layers:
         - !Ref SchemaLayer
       Policies:
         - AWSLambdaBasicExecutionRole
-#        - EduApiSQSInjestQueueAccessPolicy:
-#            QueueName: !GetAtt EduApiSQSInjestQueue.QueueName
+        - Statement:
+            - Sid: SSMDescribeParametersPolicy
+              Effect: Allow
+              Action:
+                - rds-db:connect
+              Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${SensitiveDBIamUser}
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt AnonymizeSQSInjestQueue.QueueName
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -153,39 +211,39 @@ Resources:
       CompatibleRuntimes:
         - nodejs20.x
 
-#  CaliperSQSInjestQueue:
-#    Type: AWS::SQS::Queue
-#    Properties:
-#      QueueName: eduapi-sqs-injest-queue
-#
-#  CaliperSQSQueuePolicy:
+  AnonymizeSQSInjestQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: eduapi-sqs-injest-queue
+
+#  AnonymizeSQSQueuePolicy:
 #    Type: AWS::SQS::QueuePolicy
 #    Properties:
 #      Queues:
-#        - !Ref CaliperSQSInjestQueue
+#        - !Ref AnonymizeSQSInjestQueue
 #      PolicyDocument:
-#        Version: "2012-10-17"
+#        Version: 2012-10-17
 #        Statement:
 #          - Effect: Allow
 #            Principal: "*"
 #            Action: "sqs:SendMessage"
-#            Resource: !GetAtt CaliperSQSInjestQueue.Arn
+#            Resource: !GetAtt AnonymizeSQSInjestQueue.Arn
 #            Condition:
 #              ArnEquals:
 #                "aws:SourceArn": !Ref AnalyticsApi
 #
-#  CaliperSQSInjestEventSource:
+#  AnonymizeSQSInjestEventSource:
 #    Type: AWS::Lambda::EventSourceMapping
 #    Properties:
-#      FunctionName: !Ref CaliperSQSInjestFunction
-#      EventSourceArn: !GetAtt CaliperSQSInjestQueue.Arn
+#      FunctionName: !Ref AnonymizeSQSInjestFunction
+#      EventSourceArn: !GetAtt AnonymizeSQSInjestQueue.Arn
 #      BatchSize: 1
 #
-#  CaliperSQSInjestFunction:
+#  AnonymizeSQSInjestFunction:
 #    Type: AWS::Serverless::Function
 #    Properties:
-#      Handler: eduapi-sqs.lambdaHandler
-#      CodeUri: eduapi-sqs/
+#      Handler: anonymize-sqs.lambdaHandler
+#      CodeUri: anonymize-sqs/
 #      Runtime: nodejs20.x
 #      Architectures:
 #        - x86_64
@@ -193,7 +251,7 @@ Resources:
 #        CaliperData:
 #          Type: SQS
 #          Properties:
-#            Queue: !GetAtt CaliperSQSInjestQueue.Arn
+#            Queue: !GetAtt AnonymizeSQSInjestQueue.Arn
 #      Environment:
 #        Variables:
 #          NODE_OPTIONS: --enable-source-maps
@@ -208,7 +266,7 @@ Resources:
 #        Target: "es2020"
 #        Sourcemap: true
 #        EntryPoints: 
-#          - eduapi-sqs.ts
+#          - anonymize-sqs.ts
 
 Outputs:
 

@@ -1,0 +1,821 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: CloudFormation Template to create Aurora Postgresql Cluster DB Instance
+
+###############################################################################
+# Parameters 
+###############################################################################   
+
+Parameters:
+  pEnv:
+    Description: The name of the environment this is going into (staging, etc)
+    Type: String
+
+  DBType:
+    Description: The type of data this DB will host
+    Type: String
+    AllowedValues:
+      - sensitive
+      - published
+
+  DBName:
+    Description: Database Name
+    Type: String
+    MinLength: 1
+    MaxLength: 64
+    AllowedPattern: "^[a-zA-Z]+[0-9a-zA-Z_]*$" 
+    ConstraintDescription: Must start with a letter. Only numbers, letters, and _ accepted. max length 64 characters 
+
+  DBPort:
+    Description: TCP/IP Port for the Database Instance
+    Type: Number
+    Default: 5432
+    ConstraintDescription: Must be in the range [1150-65535]
+    MinValue: 1150
+    MaxValue: 65535
+    
+  DBUsername:
+    Description: Database master username
+    Type: String
+    MinLength: 1
+    MaxLength: 16
+    AllowedPattern: "^[a-zA-Z]+[0-9a-zA-Z_]*$"
+    ConstraintDescription: Must start with a letter. Only numbers, letters, and _ accepted. max length 16 characters
+     
+  DBEngineVersion:
+    Description: Select Database Engine Version
+    Type: String
+    Default: 16.1
+    AllowedValues:
+      - 11.16
+      - 12.11
+      - 13.7
+      - 14.3
+      - 15.4
+      - 16.1
+     
+  DBInstanceClass:
+    Default: db.t4g.medium
+    Description: Database Instance Class
+    Type: String
+    AllowedValues:
+    - db.t4g.medium
+    - db.t4g.large
+    - db.r5.large
+    - db.r5.xlarge
+    - db.r5.2xlarge
+    - db.r5.4xlarge
+    - db.r5.8xlarge
+    - db.r5.12xlarge
+    - db.r5.16xlarge
+    - db.r5.24xlarge
+    - db.r6g.large
+    - db.r6g.xlarge
+    - db.r6g.2xlarge
+    - db.r6g.4xlarge
+    - db.r6g.8xlarge
+    - db.r6g.12xlarge
+    - db.r6g.16xlarge
+    - db.x2g.large
+    - db.x2g.xlarge
+    - db.x2g.2xlarge
+    - db.x2g.4xlarge
+    - db.x2g.8xlarge
+    - db.x2g.12xlarge
+    - db.x2g.16xlarge
+
+  DBSnapshotName:
+    Description: Optional. DB Snapshot ID to restore database. Leave this blank if you are not restoring from a snapshot.
+    Type: String
+    Default: ''
+
+  IamUser:
+    Description: The name of the IAM user that will be created to manage this database
+    Type: String
+  
+###########################################################################
+# Mandatory tags that will be added to all resources that support tags
+###########################################################################
+  
+
+  EnvironmentStage:
+    Type: String
+    Description: The environment tag is used to designate the Environment Stage of the associated AWS resource.
+    AllowedValues:
+      - dev
+      - test
+      - qa
+      - pre-prod
+      - prod
+    Default: dev
+
+  Application:
+    Type: String
+    Description: The Application tag is used to designate the application of the associated AWS resource. In this capacity application does not refer to an installed software component, but rather the overall business application that the resource supports.
+    AllowedPattern: "^[a-zA-Z]+[a-zA-Z ]+[a-zA-Z]+$"
+    ConstraintDescription: provide a valid application name containing only letters and spaces
+
+  ApplicationVersion:
+    Type: String
+    Description: The ApplicationVersion tag is used to designate the specific version of the application. Format should be in the Pattern - "#.#.#"
+    Default: '1.0.0'
+    AllowedPattern: '^[a-zA-Z0-9\.\-]+$'
+    ConstraintDescription: provide a valid application version
+     
+  NotificationList:
+    Type: String
+    Description: The Email notification list is used to configure a SNS topic for sending cloudwatch alarm and RDS Event notifications
+    AllowedPattern: '^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$'
+    ConstraintDescription: provide a valid email address.
+    
+  Confidentiality:
+    Type: String
+    Description: The Confidentiality tag is used to designate the confidentiality classification of the data that is associated with the resource.
+    AllowedValues:
+      - public
+      - private
+      - confidential
+      - pii/phi
+    
+  Compliance:
+    Type: String
+    Description: The Compliance tag is used to specify the Compliance level for the AWS resource.
+    AllowedValues:
+      - hipaa
+      - sox
+      - fips
+      - other
+      - none
+
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+  VPC:
+    Type: AWS::EC2::VPC::Id
+  KmsKey:
+    Type: String
+  HostedZoneId:
+    Description: Route53 hosted zone id to use for the database's DNS record
+    Type: AWS::Route53::HostedZone::Id
+  HostedZoneName:
+    Description: Route53 hosted zone name to use for the database's DNS record
+    Type: String
+
+
+    
+###############################################################################
+# Parameter groups
+###############################################################################
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: Environment
+        Parameters:
+          - pEnv
+          - EnvironmentStage
+      -
+        Label:
+          default: DB Parameters
+        Parameters:
+          - DBName
+          - DBType
+          - DBPort
+          - DBUsername
+          - DBInstanceClass
+          - DBEngineVersion
+          - DBSnapshotName
+          - IamUser
+          - NotificationList
+      -
+        Label:
+          default: SSM-Sourced Parameters
+        Parameters:
+          - VPC
+          - Subnets
+          - KmsKey
+          - DbSecurityGroup
+          - HostedZoneId
+          - HostedZoneName
+      -
+        Label:
+          default: Mandatory Tags
+        Parameters:
+          - Application
+          - ApplicationVersion
+          - Confidentiality
+          - Compliance
+          
+###############################################################################
+# Mappings
+###############################################################################
+ 
+Mappings: 
+  DBFamilyMap: 
+    "11.16":
+      "family": "aurora-postgresql11"
+    "12.11":
+      "family": "aurora-postgresql12"
+    "13.7":
+      "family": "aurora-postgresql13"
+    "14.3":
+      "family": "aurora-postgresql14"
+    "15.4":
+      "family": "aurora-postgresql15"
+    "16.1":
+      "family": "aurora-postgresql16"
+
+      
+###############################################################################
+# Conditions
+############################################################################### 
+Conditions:
+  IsUseDBSnapshot: !Not [!Equals [!Ref DBSnapshotName, '']]
+  IsNotUseDBSnapshot: !Not [Condition: IsUseDBSnapshot]
+  IsProd: !Equals [!Ref EnvironmentStage, prod]
+  IsReplica: !Or [!Equals [!Ref EnvironmentStage, pre-prod], Condition: IsProd]
+  DoDBBootStrap: !Not [Condition: IsUseDBSnapshot]
+  DoEnableIAM: !Not [!Equals [!Ref DBEngineVersion, 9.6.8]]
+  
+  
+
+###############################################################################
+# Resources 
+###############################################################################   
+    
+Resources:
+
+  MonitoringIAMRole: 
+    Type: AWS::IAM::Role
+    Condition: IsProd
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: 2012-10-17
+        Statement: 
+          - 
+            Effect: Allow
+            Principal: 
+              Service: 
+                - monitoring.rds.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole
+        
+  DBSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      KmsMasterKeyId: !Ref KmsKey
+      Subscription:
+      - Endpoint: !Ref NotificationList
+        Protocol: email
+        
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Ref AWS::StackName
+      SubnetIds: !Ref Subnets
+      
+  ClusterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: F1000
+          - id: W42
+    Properties:
+      GroupDescription: !Ref AWS::StackName
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-AuroraClusterSecurityGroup
+        
+  ClusterSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !GetAtt ClusterSecurityGroup.GroupId
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref ClusterSecurityGroup
+      Description: Self Reference
+      
+  RDSDBClusterParameterGroup:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Description: !Join [ "- ", [ "Aurora PG Cluster Parameter Group for Cloudformation Stack ", !Ref DBName ] ]
+      Family: !FindInMap [DBFamilyMap, !Ref DBEngineVersion, family] 
+      Parameters:
+        rds.force_ssl: 1
+        
+  DBParamGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: !Join [ "- ", [ "Aurora PG Database Instance Parameter Group for Cloudformation Stack ", !Ref DBName ] ]
+      Family: !FindInMap [DBFamilyMap, !Ref DBEngineVersion, family] 
+      Parameters:
+        shared_preload_libraries: auto_explain,pg_stat_statements,pg_hint_plan,pgaudit
+        log_statement: ddl
+        log_connections: 1
+        log_disconnections: 1
+        log_lock_waits: 1
+        log_min_duration_statement: 5000
+        auto_explain.log_min_duration: 5000
+        auto_explain.log_verbose: 1
+        log_rotation_age: 1440
+        log_rotation_size: 102400
+        rds.log_retention_period: 10080
+        random_page_cost: 1
+        track_activity_query_size: 16384
+        idle_in_transaction_session_timeout: 7200000
+        statement_timeout: 7200000
+        search_path: '"$user",public'
+
+  AuroraDBCluster:
+    Type: AWS::RDS::DBCluster
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - E2520
+      cfn_nag:
+        rules_to_suppress:
+          - id: F26
+    Properties:
+      Engine: aurora-postgresql
+      EngineVersion: !Ref DBEngineVersion
+      AutoMinorVersionUpgrade: true
+      DatabaseName: !If [IsUseDBSnapshot, !Ref AWS::NoValue, !Ref DBName]
+      Port: !Ref DBPort
+      MasterUsername: !If [IsUseDBSnapshot, !Ref AWS::NoValue, !Ref DBUsername]
+      ManageMasterUserPassword: true
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      NetworkType: DUAL
+      VpcSecurityGroupIds:
+      - !Ref ClusterSecurityGroup  
+      BackupRetentionPeriod: !If [IsProd, 35, 7]
+      DBClusterParameterGroupName: !Ref RDSDBClusterParameterGroup
+      SnapshotIdentifier: !If [IsUseDBSnapshot, !Ref DBSnapshotName, !Ref AWS::NoValue]
+      StorageEncrypted:  !If [IsUseDBSnapshot, !Ref AWS::NoValue, true]
+      KmsKeyId: !If [IsNotUseDBSnapshot, !Ref KmsKey, !Ref AWS::NoValue]
+      EnableIAMDatabaseAuthentication: !If [DoEnableIAM, true, !Ref AWS::NoValue]
+      EnableCloudwatchLogsExports: [postgresql]
+      CopyTagsToSnapshot: true
+      Tags:
+        -
+          Key: pEnv
+          Value: !Ref pEnv
+        -
+          Key: EnvironmentStage
+          Value: !Ref EnvironmentStage
+        -
+          Key: Application
+          Value: !Ref Application
+        -
+          Key: ApplicationVersion
+          Value: !Ref ApplicationVersion
+        -
+          Key: Confidentiality
+          Value: !Ref Confidentiality
+        -
+          Key: Compliance
+          Value: !Ref Compliance
+        
+  AuroraDBFirstInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass:
+        Ref: DBInstanceClass
+      DBClusterIdentifier: !Ref AuroraDBCluster  
+      Engine: aurora-postgresql
+      EngineVersion: !Ref DBEngineVersion
+      DBParameterGroupName:
+        Ref: DBParamGroup
+      MonitoringInterval: !If [IsProd, 1, 0]
+      MonitoringRoleArn: !If [IsProd, !GetAtt MonitoringIAMRole.Arn, !Ref AWS::NoValue]
+      AutoMinorVersionUpgrade: !If [IsProd, false, true]
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: false
+      EnablePerformanceInsights: true
+      PerformanceInsightsKMSKeyId: !Ref KmsKey
+      PerformanceInsightsRetentionPeriod: !If [IsProd, 731, 7]
+      Tags:
+        -
+          Key: pEnv
+          Value: !Ref pEnv
+        -
+          Key: EnvironmentStage
+          Value: !Ref EnvironmentStage
+        -
+          Key: Application
+          Value: !Ref Application
+        -
+          Key: ApplicationVersion
+          Value: !Ref ApplicationVersion
+        -
+          Key: Confidentiality
+          Value: !Ref Confidentiality
+        -
+          Key: Compliance
+          Value: !Ref Compliance
+
+  AuroraDBSecondInstance:
+    Condition: IsReplica
+    Type: AWS::RDS::DBInstance
+    DependsOn: 
+      - AuroraDBFirstInstance
+    Properties:
+      DBInstanceClass:
+        Ref: DBInstanceClass
+      DBClusterIdentifier: !Ref AuroraDBCluster  
+      Engine: aurora-postgresql
+      EngineVersion: !Ref DBEngineVersion
+      DBParameterGroupName:
+        Ref: DBParamGroup
+      MonitoringInterval: !If [IsProd, 1, 0]
+      MonitoringRoleArn: !If [IsProd, !GetAtt MonitoringIAMRole.Arn, !Ref AWS::NoValue]
+      AutoMinorVersionUpgrade: !If [IsProd, false, true]
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: false
+      EnablePerformanceInsights: true
+      PerformanceInsightsKMSKeyId: !Ref KmsKey
+      PerformanceInsightsRetentionPeriod: !If [IsProd, 731, 7]
+      Tags:
+        -
+          Key: pEnv
+          Value: !Ref pEnv
+        -
+          Key: EnvironmentStage
+          Value: !Ref EnvironmentStage
+        -
+          Key: Application
+          Value: !Ref Application
+        -
+          Key: ApplicationVersion
+          Value: !Ref ApplicationVersion
+        -
+          Key: Confidentiality
+          Value: !Ref Confidentiality
+        -
+          Key: Compliance
+          Value: !Ref Compliance
+          
+  CPUUtilizationAlarm1:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+      - Ref: DBSNSTopic
+      AlarmDescription: CPU_Utilization
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value:
+          Ref: AuroraDBFirstInstance
+      MetricName: CPUUtilization
+      Statistic: Maximum
+      Namespace: AWS/RDS
+      Threshold: 80
+      Unit: Percent
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Period: 60
+      EvaluationPeriods: 5
+      TreatMissingData: notBreaching
+      
+  CPUUtilizationAlarm2:
+    Condition: IsReplica
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+      - Ref: DBSNSTopic
+      AlarmDescription: CPU_Utilization
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value:
+          Ref: AuroraDBSecondInstance
+      MetricName: CPUUtilization
+      Statistic: Maximum
+      Namespace: AWS/RDS
+      Threshold: 80
+      Unit: Percent
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Period: 60
+      EvaluationPeriods: 5
+      TreatMissingData: notBreaching
+      
+  MaxUsedTxIDsAlarm1:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+      - Ref: DBSNSTopic
+      AlarmDescription: Maximum Used Transaction IDs
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value:
+          Ref: AuroraDBFirstInstance
+      MetricName: MaximumUsedTransactionIDs
+      Statistic: Average
+      Namespace: AWS/RDS
+      Threshold: 600000000
+      Unit: Count
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Period: 60
+      EvaluationPeriods: 5
+      TreatMissingData: notBreaching
+      
+  MaxUsedTxIDsAlarm2:
+    Condition: IsReplica
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+      - Ref: DBSNSTopic
+      AlarmDescription: Maximum Used Transaction IDs
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value:
+          Ref: AuroraDBSecondInstance
+      MetricName: MaximumUsedTransactionIDs
+      Statistic: Average
+      Namespace: AWS/RDS
+      Threshold: 600000000
+      Unit: Count
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Period: 60
+      EvaluationPeriods: 5
+      TreatMissingData: notBreaching
+
+  FreeLocalStorageAlarm1:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+      - Ref: DBSNSTopic
+      AlarmDescription: Free Local Storage
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value:
+          Ref: AuroraDBFirstInstance
+      MetricName: FreeLocalStorage
+      Statistic: Average
+      Namespace: AWS/RDS
+      Threshold: 5368709120
+      Unit: Bytes
+      ComparisonOperator: LessThanOrEqualToThreshold
+      Period: 60
+      EvaluationPeriods: 5
+      TreatMissingData: notBreaching
+      
+  FreeLocalStorageAlarm2:
+    Condition: IsReplica
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+      - Ref: DBSNSTopic
+      AlarmDescription: Free Local Storage
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value:
+          Ref: AuroraDBSecondInstance
+      MetricName: FreeLocalStorage
+      Statistic: Average
+      Namespace: AWS/RDS
+      Threshold: 5368709120
+      Unit: Bytes
+      ComparisonOperator: LessThanOrEqualToThreshold
+      Period: 60
+      EvaluationPeriods: 5
+      TreatMissingData: notBreaching
+      
+  DatabaseClusterEventSubscription:
+    Type: AWS::RDS::EventSubscription
+    Properties:
+      EventCategories:
+      - failover
+      - failure
+      - notification
+      SnsTopicArn: !Ref DBSNSTopic
+      SourceIds: [!Ref AuroraDBCluster]
+      SourceType: db-cluster
+
+  DatabaseInstanceEventSubscription:
+    Type: AWS::RDS::EventSubscription
+    Properties:
+      EventCategories:
+      - availability
+      - configuration change
+      - deletion
+      - failover
+      - failure
+      - maintenance
+      - notification
+      - recovery
+      SnsTopicArn: !Ref DBSNSTopic
+      SourceIds: 
+      - !Ref AuroraDBFirstInstance
+      - !If [IsReplica, !Ref AuroraDBSecondInstance, !Ref AWS::NoValue]
+      SourceType: db-instance
+      
+  DBParameterGroupEventSubscription:
+    Type: AWS::RDS::EventSubscription
+    Properties:
+      EventCategories:
+      - configuration change
+      SnsTopicArn: !Ref DBSNSTopic
+      SourceIds: [!Ref DBParamGroup]
+      SourceType: db-parameter-group
+
+  DBBootStrapLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+              - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - 
+          PolicyName: secretaccess
+          PolicyDocument: 
+            Version: 2012-10-17
+            Statement: 
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                Resource:
+                  - !Ref KmsKey
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DBName}Bootstrap
+   
+  DBBootStrapLambdaFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${DBName}Bootstrap
+      Handler: dbbootstrap.handler
+      CodeUri: dbbootstrap/
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Role: !GetAtt DBBootStrapLambdaRole.Arn
+      Timeout: 120
+      ReservedConcurrentExecutions: 1
+      VpcConfig: 
+        SecurityGroupIds: 
+          - !Ref ClusterSecurityGroup
+        SubnetIds: !Ref Subnets
+        Ipv6AllowedForDualStack: true
+      Environment:
+        Variables:
+          MasterUserSecretArn: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
+          DBHost: !GetAtt AuroraDBCluster.Endpoint.Address
+          DBPort: !GetAtt AuroraDBCluster.Endpoint.Port
+          DBName: !Ref DBName
+          DbType: !Ref DBType
+          IamUser: !Ref IamUser
+          AwsRegion: !Ref AWS::Region
+          NODE_OPTIONS: --enable-source-maps
+      Layers:
+        - !Ref SslLayer
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+          - dbbootstrap.ts
+
+  SslLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: ssl
+      ContentUri: ./ssl
+      CompatibleRuntimes:
+        - nodejs20.x
+
+  DBBootStrapLambdaInvokerFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${DBName}BootstrapInvoker
+      Handler: customInvoker.handler
+      CodeUri: customResourceFn/
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Role: !GetAtt DBBootStrapLambdaRole.Arn
+      Timeout: 120
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          TargetFunctionName: !Sub ${DBName}Bootstrap
+          NODE_OPTIONS: --enable-source-maps
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+          - customInvoker.ts
+
+  DBBootStrapLambdaFnTrigger:
+    Condition: DoDBBootStrap
+    Type: Custom::LambdaAPGBootStrap
+    DependsOn:
+      - AuroraDBFirstInstance
+      - DBBootStrapLambdaFn
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt DBBootStrapLambdaInvokerFn.Arn
+
+  DnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Comment: DB
+      Name: !Sub ${DBName}.${HostedZoneName}
+      Type: CNAME
+      TTL: 60
+      ResourceRecords:
+        - !GetAtt AuroraDBCluster.Endpoint.Address
+
+  dbHostParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${pEnv}/${DBName}/DBHost
+      Type: String
+      Value: !Ref DnsRecord
+
+  dbUserParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${pEnv}/${DBName}/DBusername
+      Type: String
+      Value: !Ref DBUsername
+
+  dbSecretArnParam:
+    Type: AWS::SSM::Parameter
+    Condition: IsNotUseDBSnapshot
+    Properties:
+      Name: !Sub /${pEnv}/${DBName}/DBSecret
+      Type: String
+      Value: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
+
+
+###############################################################################
+# Outputs 
+###############################################################################   
+Outputs:
+  ClusterEndpoint:
+    Description: Aurora Cluster/Writer Endpoint
+    Value: !GetAtt AuroraDBCluster.Endpoint.Address
+  ReaderEndpoint:
+    Description: Aurora Reader Endpoint
+    Value: !GetAtt AuroraDBCluster.ReadEndpoint.Address
+  Port:
+    Description: Aurora Endpoint Port
+    Value: !GetAtt AuroraDBCluster.Endpoint.Port
+  DBUsername:
+    Description: Database master username
+    Value: !Ref DBUsername
+  DBName:
+    Description: Database Name
+    Value: !Ref DBName
+  IamUser:
+    Description: IAM Database User
+    Value: !Ref IamUser
+  ClusterSecurityGroup:
+    Description: The DB Cluster security group
+    Value: !Ref ClusterSecurityGroup
+  PSQLCommandLine:    
+    Description: PSQL Command Line
+    Value: !Join
+             - ''
+             - - 'psql --host='
+               - !GetAtt AuroraDBCluster.Endpoint.Address
+               - ' --port='
+               - !GetAtt AuroraDBCluster.Endpoint.Port
+               - ' --username='
+               - !Ref DBUsername
+               - ' --dbname='
+               - !Ref DBName
+    

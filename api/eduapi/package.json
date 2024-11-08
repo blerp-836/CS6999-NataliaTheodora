@@ -2,7 +2,7 @@
   "name": "eduapi",
   "version": "1.0.0",
   "description": "Function for consuming EduAPI data artifacts",
-  "main": "app.js",
+  "main": "eduapi.js",
   "repository": "https://github.com/1EdTech/HEReferenceDataPipeline",
   "author": "1EdTech & Unicon",
   "license": "MIT",
@@ -13,19 +13,23 @@
     "test": "npm run compile && npm run unit"
   },
   "files": [
-    "caliper.js",
-    "schema.json"
+    "eduapi.js"
   ],
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.687.0",
+    "@aws-sdk/rds-signer": "^3.679.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
-    "esbuild": "^0.14.14"
+    "aws-sdk": "^2.1691.0",
+    "esbuild": "^0.14.14",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.2.0",
     "@types/aws-lambda": "^8.10.92",
     "@types/jest": "^29.2.0",
     "@types/node": "^20.5.7",
+    "@types/pg": "^8.11.10",
     "@typescript-eslint/eslint-plugin": "^5.10.2",
     "@typescript-eslint/parser": "^5.10.2",
     "eslint": "^8.8.0",

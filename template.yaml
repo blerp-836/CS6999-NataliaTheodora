@@ -6,8 +6,36 @@ Description: >
   SAM Template for auth, API, and back-end resources
 
 Parameters:
-  myUnusedParam:
+  pEnv:
     Type: String
+
+Mappings:
+  EnvMap:
+    dev:
+      pVpcName: dev-ai-aloe-vpc
+      pOrg: ai-aloe-dev
+      pNumAzs: 2
+      pCreateNatGateway: true
+      pCreateSingleNatGateway: true
+      pCidr: 10.1.0.0/20
+      pTier1Subnet1Cidr: 10.1.0.0/24
+      pTier1Subnet2Cidr: 10.1.1.0/24
+      pTier2Subnet1Cidr: 10.1.2.0/24
+      pTier2Subnet2Cidr: 10.1.3.0/24
+      pNotificationList: abragg@unicon.net
+    qa:
+      pVpcName: qa-ai-aloe-vpc
+      pOrg: ai-aloe-qa
+      pNumAzs: 2
+      pCreateNatGateway: false
+      pCreateSingleNatGateway: false
+      pCidr: 10.2.0.0/20
+      pTier1Subnet1Cidr: 10.2.0.0/24
+      pTier1Subnet2Cidr: 10.2.1.0/24
+      pTier2Subnet1Cidr: 10.2.2.0/24
+      pTier2Subnet2Cidr: 10.2.3.0/24
+      pNotificationList: tcouper@1edtech.org
+
 
 Resources:
 
@@ -24,15 +52,28 @@ Resources:
         Location: api/template.yaml
         Parameters:
           CognitoUserPoolArn: !GetAtt Auth.Outputs.CognitoUserPoolArn
-      DependsOn: Auth
+          SensitiveDBHost: !GetAtt Backend.Outputs.SensitiveDataDatabaseEndpoint
+          SensitiveDBPort: !GetAtt Backend.Outputs.SensitiveDataDatabaseEndpointPort
+          SensitiveDBName: !GetAtt Backend.Outputs.SensitiveDataDatabaseDBName
+          SensitiveDBIamUser: !GetAtt Backend.Outputs.SensitiveDataDatabaseIamUser
+          SensitiveDBSecurityGroup: !GetAtt Backend.Outputs.SensitiveDataDatabaseSecurityGroup
+          PrivateSubnets: !GetAtt Backend.Outputs.PrivateSubnets
 
-#    Backend:
-#      Type: AWS::Serverless::Application
-#      Properties:
-#        Location: backend/template.yaml
-#        Parameters:
-#          AllowedOrigin: 'http://localhost:8080'
-#      DependsOn: API
+    Backend:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: backend/template.yaml
+        Parameters:
+          pVpcName: !FindInMap [EnvMap, !Ref pEnv, pVpcName]
+          pOrg: !FindInMap [EnvMap, !Ref pEnv, pOrg]
+          pNumAzs: !FindInMap [EnvMap, !Ref pEnv, pNumAzs]
+          pCreateNatGateway: !FindInMap [EnvMap, !Ref pEnv, pCreateNatGateway]
+          pCidr: !FindInMap [EnvMap, !Ref pEnv, pCidr]
+          pTier1Subnet1Cidr: !FindInMap [EnvMap, !Ref pEnv, pTier1Subnet1Cidr]
+          pTier1Subnet2Cidr: !FindInMap [EnvMap, !Ref pEnv, pTier1Subnet2Cidr]
+          pTier2Subnet1Cidr: !FindInMap [EnvMap, !Ref pEnv, pTier2Subnet1Cidr]
+          pTier2Subnet2Cidr: !FindInMap [EnvMap, !Ref pEnv, pTier2Subnet2Cidr]
+          pNotificationList: !FindInMap [EnvMap, !Ref pEnv, pNotificationList]
 
 Outputs:
 
