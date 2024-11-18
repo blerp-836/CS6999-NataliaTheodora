@@ -13,21 +13,41 @@ Parameters:
     Type: String
     Description: The IAM username with access to the sensitive data database
   SensitiveDBHost:
-    Description: Database host name
+    Description: Database host name for the "sensitive" data database
     Type: String  
   SensitiveDBName:
-    Description: Database Name
+    Description: Database Name for "sensitive" data
     Type: String  
   SensitiveDBPort:
-    Description: TCP/IP Port for the Database Instance
+    Description: TCP/IP Port for the "Sensitive" Database Instance
     Type: Number
     Default: 5432
   SensitiveDBSecurityGroup:
-    Description: Security Group for the Database Instance
+    Description: Security Group for the "Sensitive" Database Instance
+    Type: String
+  PublishedDBIamUser:
+    Type: String
+    Description: The IAM username with access to the "published" data database
+  PublishedDBHost:
+    Description: Database host name for the "published" data database
+    Type: String  
+  PublishedDBName:
+    Description: Database Name for "published" data
+    Type: String  
+  PublishedDBPort:
+    Description: TCP/IP Port for the "Published" Database Instance
+    Type: Number
+    Default: 5432
+  PublishedDBSecurityGroup:
+    Description: Security Group for the "Published" Database Instance
     Type: String
   PrivateSubnets:
     Description: Private subnets within the same VPC as the database
     Type: List<AWS::EC2::Subnet::Id>
+  EncryptionKey:
+    Type: String
+    NoEcho: true
+    Description: The encryption key for the psuedo anonymization
 Resources:
 
   AnalyticsApi:
@@ -135,7 +155,7 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
         - Statement:
-            - Sid: SSMDescribeParametersPolicy
+            - Sid: RDSConnectPolicy
               Effect: Allow
               Action:
                 - rds-db:connect
@@ -187,7 +207,7 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
         - Statement:
-            - Sid: SSMDescribeParametersPolicy
+            - Sid: RDSConnectPolicy
               Effect: Allow
               Action:
                 - rds-db:connect
@@ -214,7 +234,7 @@ Resources:
   AnonymizeSQSInjestQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: eduapi-sqs-injest-queue
+      QueueName: anonymize-sqs-injest-queue
 
 #  AnonymizeSQSQueuePolicy:
 #    Type: AWS::SQS::QueuePolicy
@@ -232,41 +252,61 @@ Resources:
 #              ArnEquals:
 #                "aws:SourceArn": !Ref AnalyticsApi
 #
-#  AnonymizeSQSInjestEventSource:
-#    Type: AWS::Lambda::EventSourceMapping
-#    Properties:
-#      FunctionName: !Ref AnonymizeSQSInjestFunction
-#      EventSourceArn: !GetAtt AnonymizeSQSInjestQueue.Arn
-#      BatchSize: 1
-#
-#  AnonymizeSQSInjestFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      Handler: anonymize-sqs.lambdaHandler
-#      CodeUri: anonymize-sqs/
-#      Runtime: nodejs20.x
-#      Architectures:
-#        - x86_64
-#      Events:
-#        CaliperData:
-#          Type: SQS
-#          Properties:
-#            Queue: !GetAtt AnonymizeSQSInjestQueue.Arn
-#      Environment:
-#        Variables:
-#          NODE_OPTIONS: --enable-source-maps
-#      Layers:
-#        - !Ref SchemaLayer
-#      Policies:
-#        - AWSLambdaBasicExecutionRole
-#    Metadata:
-#      BuildMethod: esbuild
-#      BuildProperties:
-#        Minify: false
-#        Target: "es2020"
-#        Sourcemap: true
-#        EntryPoints: 
-#          - anonymize-sqs.ts
+  AnonymizeSQSInjestEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      FunctionName: !Ref AnonymizeSQSInjestFunction
+      EventSourceArn: !GetAtt AnonymizeSQSInjestQueue.Arn
+      BatchSize: 10
+      MaximumBatchingWindowInSeconds: 10
+      Enabled: true
+      ScalingConfig:
+        MaximumConcurrency: 100
+
+  AnonymizeSQSInjestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: pseudoPii.handler
+      CodeUri: pseudoPii/
+      Runtime: nodejs20.x
+      MemorySize: 256
+      Timeout: 300
+      Architectures:
+        - x86_64
+      VpcConfig: 
+        SecurityGroupIds: 
+          - !Ref PublishedDBSecurityGroup
+        SubnetIds: !Ref PrivateSubnets
+        Ipv6AllowedForDualStack: true
+      Environment:
+        Variables:
+          DBHost: !Ref PublishedDBHost
+          DBPort: !Ref PublishedDBPort
+          DBName: !Ref PublishedDBName
+          DBIamUser: !Ref PublishedDBIamUser
+          AwsRegion: !Ref AWS::Region
+          EncryptionKey: !Ref EncryptionKey
+          NODE_OPTIONS: --enable-source-maps
+      Layers:
+        - !Ref SchemaLayer
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - SQSPollerPolicy:
+            QueueName: !GetAtt AnonymizeSQSInjestQueue.QueueName
+        - Statement:
+            - Sid: RDSConnectPolicy
+              Effect: Allow
+              Action:
+                - rds-db:connect
+              Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${PublishedDBIamUser}
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+          - pseudoPii.ts
 
 Outputs:
 

@@ -29,7 +29,7 @@ default:
       disable_rollback: false
       s3_prefix: reference-data-pipeline
       tags: env=dev name=reference-data-pipeline
-      parameter_overrides: "pEnv=dev"
+      parameter_overrides: "pEnv=dev pEncryptionKey=123456789ABCDEFG"
 
   sync:
     parameters:
@@ -70,7 +70,7 @@ qa:
       disable_rollback: false
       s3_prefix: reference-data-pipeline-qa
       tags: env=qa name=reference-data-pipeline-qa
-      parameter_overrides: "pEnv=qa"
+      parameter_overrides: "pEnv=qa pEncryptionKey=123456789ABCDEFG"
 
   sync:
     parameters:

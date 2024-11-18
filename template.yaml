@@ -8,6 +8,8 @@ Description: >
 Parameters:
   pEnv:
     Type: String
+  pEncryptionKey: 
+    Type: String
 
 Mappings:
   EnvMap:
@@ -57,7 +59,13 @@ Resources:
           SensitiveDBName: !GetAtt Backend.Outputs.SensitiveDataDatabaseDBName
           SensitiveDBIamUser: !GetAtt Backend.Outputs.SensitiveDataDatabaseIamUser
           SensitiveDBSecurityGroup: !GetAtt Backend.Outputs.SensitiveDataDatabaseSecurityGroup
+          PublishedDBHost: !GetAtt Backend.Outputs.PublishedDataDatabaseEndpoint
+          PublishedDBPort: !GetAtt Backend.Outputs.PublishedDataDatabaseEndpointPort
+          PublishedDBName: !GetAtt Backend.Outputs.PublishedDataDatabaseDBName
+          PublishedDBIamUser: !GetAtt Backend.Outputs.PublishedDataDatabaseIamUser
+          PublishedDBSecurityGroup: !GetAtt Backend.Outputs.PublishedDataDatabaseSecurityGroup
           PrivateSubnets: !GetAtt Backend.Outputs.PrivateSubnets
+          EncryptionKey: !Ref pEncryptionKey
 
     Backend:
       Type: AWS::Serverless::Application

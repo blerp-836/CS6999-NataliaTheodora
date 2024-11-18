@@ -1037,6 +1037,135 @@ Resources:
         HostedZoneName: !Sub ${pEnv}.aws
         NotificationList: !Ref pNotificationList
 
+  PublishedDataDatabase:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: aurora-postgres.yaml
+      Parameters:
+        pEnv: !Ref pEnv
+        DBName: !Sub ${pEnv}AiAloePublishedDb
+        DBType: published
+        IamUser: aloesens
+        DBPort: 5432
+        DBUsername: aloeadmin
+        DBEngineVersion: 16.1
+        DBInstanceClass: db.t4g.medium
+        EnvironmentStage: !Ref pEnv
+        Application: AI ALOE
+        Confidentiality: public
+        Compliance: other
+        VPC: !Ref rVpc
+        Subnets: !Join
+          - ','
+          - - !If
+              - cCreateTier2Subnet1
+              - !Ref rTier2Subnet1
+              - !Ref AWS::NoValue
+            - !If
+              - cCreateTier2Subnet2
+              - !Ref rTier2Subnet2
+              - !Ref AWS::NoValue
+            - !If
+              - cCreateTier2Subnet3
+              - !Ref rTier2Subnet3
+              - !Ref AWS::NoValue
+        KmsKey: !GetAtt EnvironmentKmsKey.Arn
+        HostedZoneId: !Ref HostedZone
+        HostedZoneName: !Sub ${pEnv}.aws
+        NotificationList: !Ref pNotificationList
+
+  AggregateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: aggregate.handler
+      CodeUri: aggregate/
+      Runtime: nodejs20.x
+      MemorySize: 256
+      Timeout: 300
+      Architectures:
+        - x86_64
+      VpcConfig: 
+        SecurityGroupIds: 
+          - !GetAtt PublishedDataDatabase.Outputs.ClusterSecurityGroup
+        SubnetIds:
+          - !If
+            - cCreateTier2Subnet1
+            - !Ref rTier2Subnet1
+            - !Ref AWS::NoValue
+          - !If
+            - cCreateTier2Subnet2
+            - !Ref rTier2Subnet2
+            - !Ref AWS::NoValue
+          - !If
+              - cCreateTier2Subnet3
+              - !Ref rTier2Subnet3
+              - !Ref AWS::NoValue
+        Ipv6AllowedForDualStack: true
+      Environment:
+        Variables:
+          DBHost: !GetAtt PublishedDataDatabase.Outputs.ClusterEndpoint
+          DBPort: !GetAtt PublishedDataDatabase.Outputs.Port
+          DBName: !GetAtt PublishedDataDatabase.Outputs.DBName
+          DBIamUser: !GetAtt PublishedDataDatabase.Outputs.IamUser
+          AwsRegion: !Ref AWS::Region
+          NODE_OPTIONS: --enable-source-maps
+      Layers:
+        - !Ref SchemaLayer
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Sid: RDSConnectPolicy
+              Effect: Allow
+              Action:
+                - rds-db:connect
+              Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${PublishedDataDatabase.Outputs.IamUser}
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+          - aggregate.ts
+
+  SchemaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: schemaDocs
+      ContentUri: ../api/json-schema
+      CompatibleRuntimes:
+        - nodejs20.x
+
+  AggregateScheduleRule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: aggregate-function-schedule
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      ScheduleExpression: "cron(0 * * * ? *)" # Runs every hour
+      Target:
+        Arn: !GetAtt AggregateFunction.Arn
+        RoleArn: !GetAtt AggregateScheduleRole.Arn
+
+  AggregateScheduleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt AggregateFunction.Arn
+
 Outputs:
 
   oVpcId:
@@ -1154,3 +1283,32 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}::sensitive-data-db-security-group
 
+  PublishedDataDatabaseEndpoint:
+    Description: Published data database endpoint
+    Value: !GetAtt PublishedDataDatabase.Outputs.ClusterEndpoint
+    Export:
+      Name: !Sub ${AWS::StackName}::published-data-db-endpoint
+
+  PublishedDataDatabaseEndpointPort:
+    Description: Published data database endpoint port
+    Value: !GetAtt PublishedDataDatabase.Outputs.Port
+    Export:
+      Name: !Sub ${AWS::StackName}::published-data-db-endpoint-port
+
+  PublishedDataDatabaseDBName:
+    Description: Published data database name
+    Value: !GetAtt PublishedDataDatabase.Outputs.DBName
+    Export:
+      Name: !Sub ${AWS::StackName}::published-data-db-name
+
+  PublishedDataDatabaseIamUser:
+    Description: Published data database IAM user
+    Value: !GetAtt PublishedDataDatabase.Outputs.IamUser
+    Export:
+      Name: !Sub ${AWS::StackName}::published-data-db-iam-user
+  
+  PublishedDataDatabaseSecurityGroup:
+    Description: Published data database security group
+    Value: !GetAtt PublishedDataDatabase.Outputs.ClusterSecurityGroup
+    Export:
+      Name: !Sub ${AWS::StackName}::published-data-db-security-group

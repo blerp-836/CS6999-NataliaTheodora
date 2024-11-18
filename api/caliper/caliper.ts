@@ -82,11 +82,11 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // loop through the data and save each event to the database
         for (const [index, event] of data.data.entries()) {
           const dataType = event.type;
-          const saveResult = await saveData(data, dataType, namespaceVersion);
+          const saveResult = await saveData({eventData: event, dataType: dataType, namespaceVersion: namespaceVersion});
           console.log(`saving event ${index}: ${saveResult.status}`);
 
-          // put the id on the SQS queue to be anonymized later
-          await sendMessageToSQS(saveResult.id);
+          // put the id and data on the SQS queue to be anonymized later
+          await sendMessageToSQS({ id: saveResult.id, dataType: dataType, namespaceVersion: namespaceVersion, eventData: event });
         }
 
         // Send a success response
@@ -147,117 +147,119 @@ async function getAuthToken(): Promise<string> {
     return signer.getAuthToken();
   }
   
-  /**
-   * Creates a new database connection using AWS IAM authentication.
-   * 
-   * @returns {Promise<Client>} A promise that resolves to a connected PostgreSQL client
-   * @throws {Error} If connection creation fails
-   */
-  async function createDbConnection(): Promise<Client> {
-    const authToken = await getAuthToken();
+/**
+ * Creates a new database connection using AWS IAM authentication.
+ * 
+ * @returns {Promise<Client>} A promise that resolves to a connected PostgreSQL client
+ * @throws {Error} If connection creation fails
+ */
+async function createDbConnection(): Promise<Client> {
+  const authToken = await getAuthToken();
+
+  const clientConfig: ClientConfig = {
+    host: dbHost,
+    port: parseInt(dbPort, 10),
+    database: dbName,
+    user: dbIamUser,
+    password: authToken,
+    ssl: {
+      rejectUnauthorized: false,
+      ca: fs.readFile('/opt/ssl/rds-combined-ca-bundle.pem').toString(),
+    }
+  };
+  const client = new Client(clientConfig);
+
+  await client.connect();
+  return client;
+}
+
+interface RawData {
+  id?: string;
+  dataType: string;
+  namespaceVersion: string;
+  eventData: string;
+}
   
-    const clientConfig: ClientConfig = {
-      host: dbHost,
-      port: parseInt(dbPort, 10),
-      database: dbName,
-      user: dbIamUser,
-      password: authToken,
-      ssl: {
-        rejectUnauthorized: false,
-        ca: fs.readFile('/opt/ssl/rds-combined-ca-bundle.pem').toString(),
-      }
+/**
+ * Saves data to the raw_events table in the database.
+ * 
+ * @param {RawData} data - The data object to be stored
+ * @param {string} dataType - The type of event being stored
+ * @param {string} typeVersion - The version of the data type
+ * @returns {Promise<Object>} A promise that resolves to an object containing:
+ *   - status: JSON string with message, id, and timestamp
+ * @throws {Error} If database operations fail
+ * 
+ * @example
+ * try {
+ *   const result = await saveData(
+ *     { key: 'value' },
+ *     'USER_EVENT',
+ *     '1.0'
+ *   );
+ *   console.log(result.status);
+ * } catch (error) {
+ *   console.error('Failed to save data:', error);
+ * }
+ */
+async function saveData(data: RawData): Promise<any> {
+  let client: Client | null = null;
+
+  try {
+    client = await createDbConnection();
+
+    // Prepare the INSERT query with parameterized values for security
+    const query = `
+      INSERT INTO raw_events 
+      (event, event_type, type_version) 
+      VALUES ($1, $2, $3)
+      RETURNING id, create_date`;
+    
+    const values = [JSON.stringify(data.eventData), data.dataType, data.namespaceVersion];
+    const result = await client.query(query, values);
+
+    return {
+      status: JSON.stringify({
+        message: 'Data saved successfully',
+        id: result.rows[0].id,
+        timestamp: result.rows[0].created_at
+      }),
+      id: result.rows[0].id
     };
-    const client = new Client(clientConfig);
-  
-    await client.connect();
-    return client;
-  }
-  
-  interface RawData {
-    // define important keys from the schema here
-    [key: string]: any;
-  }
-  
-  /**
-   * Saves data to the raw_events table in the database.
-   * 
-   * @param {RawData} data - The data object to be stored
-   * @param {string} dataType - The type of event being stored
-   * @param {string} typeVersion - The version of the data type
-   * @returns {Promise<Object>} A promise that resolves to an object containing:
-   *   - status: JSON string with message, id, and timestamp
-   * @throws {Error} If database operations fail
-   * 
-   * @example
-   * try {
-   *   const result = await saveData(
-   *     { key: 'value' },
-   *     'USER_EVENT',
-   *     '1.0'
-   *   );
-   *   console.log(result.status);
-   * } catch (error) {
-   *   console.error('Failed to save data:', error);
-   * }
-   */
-  async function saveData(data: RawData, dataType: string, typeVersion: string): Promise<any> {
-    let client: Client | null = null;
-  
-    try {
-      client = await createDbConnection();
-  
-      // Prepare the INSERT query with parameterized values for security
-      const query = `
-        INSERT INTO raw_events 
-        (event, event_type, type_version) 
-        VALUES ($1, $2, $3)
-        RETURNING id, create_date`;
-      
-      const values = [JSON.stringify(data), dataType, typeVersion];
-      const result = await client.query(query, values);
-  
-      return {
-        status: JSON.stringify({
-          message: 'Data saved successfully',
-          id: result.rows[0].id,
-          timestamp: result.rows[0].created_at
-        }),
-        id: result.rows[0].id
-      };
-  
-    } catch (error) {
-      console.error('Database error:', error);
-      
-      // More specific error handling
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-  
-    } finally {
-      if (client) {
-        await client.end();
-      }
+
+  } catch (error) {
+    console.error('Database error:', error);
+    
+    // More specific error handling
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
+  } finally {
+    if (client) {
+      await client.end();
     }
   }
+}
 
- /**
+/**
  * Sends a message to an SQS queue.
  * 
- * @param {string} saveId - The ID of the saved data to be sent in the message
+ * @param {RawData} data - The data object to be sent to SQS
  * @returns {Promise<string>} A promise that resolves to the MessageId of the sent message.
  * @throws {Error} If there's an error sending the message or if the queue URL is not set.
  * 
  * @example
  * try {
- *   const messageId = await sendMessageToSQS('12345');
+ *   const messageId = await sendMessageToSQS('12345', data);
  *   console.log('Message sent successfully:', messageId);
  * } catch (error) {
  *   console.error('Failed to send message to SQS:', error);
  * }
  */
-async function sendMessageToSQS(saveId: string): Promise<string | undefined> {
+async function sendMessageToSQS(data: RawData): Promise<string | undefined> {
   try {
     const params = {
       QueueUrl: AnonymizeSQSQueueUrl,
-      MessageBody: JSON.stringify({ id: saveId })
+      MessageBody: JSON.stringify(data)
     };
 
     const command = new SendMessageCommand(params);

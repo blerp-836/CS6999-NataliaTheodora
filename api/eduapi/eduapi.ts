@@ -74,9 +74,9 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
 
         // get the schema name and version from the path parameters
-        const schemaName = event.pathParameters.schema;
-        const schemaVersion = event.pathParameters.version;
-        const schemaFile = '/opt/eduapi/' + schemaVersion + '/' + schemaName + '.json';
+        const dataType = event.pathParameters.schema;
+        const namespaceVersion = event.pathParameters.version;
+        const schemaFile = '/opt/eduapi/' + namespaceVersion + '/' + dataType + '.json';
 
         // validate the schema file exists
         try {
@@ -91,7 +91,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
         
         // Validate the JSON object against the schema
-        console.log('validating data for schemaName: ', schemaName);
+        console.log('validating data for dataType: ', dataType);
         var data = JSON.parse(event.body);
         const { valid, errors } = await validateJsonWithSchema(data, schemaFile);
         if (!valid) {
@@ -107,11 +107,11 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
 
         // Save the data to the database
-        const saveResult = await saveData(data, schemaName, schemaVersion);
+        const saveResult = await saveData(data, dataType, namespaceVersion);
         console.log(saveResult.status);
         
-        // put the id on the SQS queue to be anonymized later
-        await sendMessageToSQS(saveResult.id);
+        // put the id and data on the SQS queue to be anonymized later
+        await sendMessageToSQS({ id: saveResult.id, dataType: dataType, namespaceVersion: namespaceVersion, eventData: data });
 
         // Send a success response
         return {
@@ -276,26 +276,26 @@ async function saveData(data: RawData, dataType: string, typeVersion: string): P
   }
 }
 
-/**
+ /**
  * Sends a message to an SQS queue.
  * 
- * @param {string} saveId - The ID of the saved data to be sent in the message
+ * @param {RawData} data - The data object to be sent to SQS
  * @returns {Promise<string>} A promise that resolves to the MessageId of the sent message.
  * @throws {Error} If there's an error sending the message or if the queue URL is not set.
  * 
  * @example
  * try {
- *   const messageId = await sendMessageToSQS('12345');
+ *   const messageId = await sendMessageToSQS('12345', data);
  *   console.log('Message sent successfully:', messageId);
  * } catch (error) {
  *   console.error('Failed to send message to SQS:', error);
  * }
  */
-async function sendMessageToSQS(saveId: string): Promise<string | undefined> {
+ async function sendMessageToSQS(data: RawData): Promise<string | undefined> {
   try {
     const params = {
       QueueUrl: AnonymizeSQSQueueUrl,
-      MessageBody: JSON.stringify({ id: saveId })
+      MessageBody: JSON.stringify(data)
     };
 
     const command = new SendMessageCommand(params);
