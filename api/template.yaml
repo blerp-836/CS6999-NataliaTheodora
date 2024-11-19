@@ -270,7 +270,7 @@ Resources:
       CodeUri: pseudoPii/
       Runtime: nodejs20.x
       MemorySize: 256
-      Timeout: 300
+      Timeout: 30
       Architectures:
         - x86_64
       VpcConfig: 

@@ -63,7 +63,7 @@ qa:
   
   deploy:
     parameters:
-      capabilities: CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
+      capabilities: CAPABILITY_IAM CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM
       confirm_changeset: true
       resolve_s3: true
       resolve_image_repos: true
