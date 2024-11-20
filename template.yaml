@@ -29,8 +29,8 @@ Mappings:
       pVpcName: qa-ai-aloe-vpc
       pOrg: ai-aloe-qa
       pNumAzs: 2
-      pCreateNatGateway: false
-      pCreateSingleNatGateway: false
+      pCreateNatGateway: true
+      pCreateSingleNatGateway: true
       pCidr: 10.2.0.0/20
       pTier1Subnet1Cidr: 10.2.0.0/24
       pTier1Subnet2Cidr: 10.2.1.0/24
