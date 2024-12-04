@@ -13,6 +13,11 @@ const dbName = ensureEnvVar('DBName');
 const dbIamUser = ensureEnvVar('DBIamUser');
 const awsRegion = ensureEnvVar('AwsRegion');
 
+/**
+ * AWS Lambda handler function that processes SQS events containing data that needs PII anonymization
+ * @param {SQSEvent} event - The SQS event containing records to be processed
+ * @returns {Promise<SQSBatchResponse>} Response containing any failed message IDs
+ */
 export const handler: SQSHandler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
     const batchItemFailures: { itemIdentifier: string }[] = [];
 
@@ -44,12 +49,24 @@ export const handler: SQSHandler = async (event: SQSEvent): Promise<SQSBatchResp
     };
 };
 
+/**
+ * Result of processing an SQS record
+ * @interface ProcessResult
+ * @property {SQSRecord} record - The original SQS record
+ * @property {boolean} success - Whether processing was successful
+ * @property {any} [error] - Error information if processing failed
+ */
 interface ProcessResult {
     record: SQSRecord;
     success: boolean;
     error?: any;
 }
 
+/**
+ * Processes a batch of SQS records in parallel
+ * @param {SQSRecord[]} records - Array of SQS records to process
+ * @returns {Promise<ProcessResult[]>} Array of processing results for each record
+ */
 async function processBatch(records: SQSRecord[]): Promise<ProcessResult[]> {
     // Process messages in parallel and get all results
     const processPromises = records.map(record => processMessage(record));
@@ -68,6 +85,11 @@ async function processBatch(records: SQSRecord[]): Promise<ProcessResult[]> {
     });
 }
 
+/**
+ * Processes an individual SQS message by parsing, anonymizing PII, and saving the data
+ * @param {SQSRecord} record - Single SQS record to process
+ * @returns {Promise<ProcessResult>} Result of processing the message
+ */
 async function processMessage(record: SQSRecord): Promise<ProcessResult> {
     try {
         const event = JSON.parse(record.body);
@@ -90,6 +112,14 @@ async function processMessage(record: SQSRecord): Promise<ProcessResult> {
     }
 }
 
+/**
+ * Structure containing identified PII data
+ * @interface PiiData
+ * @property {RegExpMatchArray | null} EMAIL - Matched email addresses
+ * @property {RegExpMatchArray | null} PHONE - Matched phone numbers
+ * @property {RegExpMatchArray | null} SSN - Matched social security numbers
+ * @property {RegExpMatchArray | null} CREDIT_DEBIT_NUMBER - Matched credit card numbers
+ */
 interface PiiData {
     EMAIL: RegExpMatchArray | null;
     PHONE: RegExpMatchArray | null;
@@ -97,12 +127,24 @@ interface PiiData {
     CREDIT_DEBIT_NUMBER: RegExpMatchArray | null;
 }
 
+/**
+ * Entity representing a piece of PII data
+ * @interface PIIEntity
+ * @property {string} Type - Type of PII data
+ * @property {number} BeginOffset - Starting position of PII in text
+ * @property {number} EndOffset - Ending position of PII in text
+ */
 interface PIIEntity {
     Type: string;
     BeginOffset: number;
     EndOffset: number;
 }
 
+/**
+ * Identifies PII data in text using regex patterns
+ * @param {string} text - Text to scan for PII
+ * @returns {PiiData} Object containing matched PII data by type
+ */
 function identifyPII(text : string) : PiiData {
   const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
   const phoneRegex = /(\+\d{1,2}\s?)?(\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}/g;
@@ -120,6 +162,11 @@ function identifyPII(text : string) : PiiData {
            CREDIT_DEBIT_NUMBER: cc };
 }
 
+/**
+ * Recursively searches through an object to find and replace PII data
+ * @param {any} obj - Object to search for PII
+ * @returns {void}
+ */
 function findAndReplacePii(obj: any): void {
     // Handle arrays
     if (Array.isArray(obj)) {
@@ -157,6 +204,12 @@ function findAndReplacePii(obj: any): void {
     }
 }
 
+/**
+ * Generates a pseudonymized version of PII data using HMAC
+ * @param {string} text - Original text containing PII
+ * @param {PIIEntity} entity - Object containing PII type and position information
+ * @returns {string} Pseudonymized version of the PII data
+ */
 const pseudonymizeData = (text: string, entity: PIIEntity): string => {
     const originalValue = text.slice(entity.BeginOffset, entity.EndOffset);
     
@@ -178,32 +231,33 @@ const pseudonymizeData = (text: string, entity: PIIEntity): string => {
     }
 };
 
+/**
+ * Raw event data structure for database storage
+ * @interface RawData
+ * @property {string} [id] - The assigned unique identifier (from raw_events in the sensitive-data db)
+ * @property {string} dataType - Type of event data
+ * @property {string} namespaceVersion - Version of the data schema
+ * @property {string} eventData - JSON string containing event data
+ */
 interface RawData {
-  id?: string;
+  id: string;
   dataType: string;
   namespaceVersion: string;
   eventData: string;
 }
 
 /**
- * Saves data to the published_events table in the database.
- * 
- * @param {RawData} data - The data object to be stored
- * @returns {Promise<Object>} A promise that resolves to an object containing:
- *   - status: JSON string with message, id, and timestamp
+ * Saves anonymized event data to the published-data database
+ * @param {RawData} data - Object containing event data to be stored
+ * @returns {Promise<any>} Object containing save status and record ID
  * @throws {Error} If database operations fail
- * 
  * @example
- * try {
- *   const result = await saveData(
- *     { key: 'value' },
- *     'USER_EVENT',
- *     '1.0'
- *   );
- *   console.log(result.status);
- * } catch (error) {
- *   console.error('Failed to save data:', error);
- * }
+ * const data = {
+ *   dataType: "USER_EVENT",
+ *   namespaceVersion: "1.0",
+ *   eventData: "{...}"
+ * };
+ * const result = await saveData(data);
  */
 async function saveData(data: RawData): Promise<any> {
   let client: Client | null = null;

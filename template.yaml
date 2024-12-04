@@ -10,6 +10,8 @@ Parameters:
     Type: String
   pEncryptionKey: 
     Type: String
+  pImageTag:
+    Type: String
 
 Mappings:
   EnvMap:
@@ -72,6 +74,7 @@ Resources:
       Properties:
         Location: backend/template.yaml
         Parameters:
+          pEnv: !Ref pEnv
           pVpcName: !FindInMap [EnvMap, !Ref pEnv, pVpcName]
           pOrg: !FindInMap [EnvMap, !Ref pEnv, pOrg]
           pNumAzs: !FindInMap [EnvMap, !Ref pEnv, pNumAzs]
@@ -82,6 +85,7 @@ Resources:
           pTier2Subnet1Cidr: !FindInMap [EnvMap, !Ref pEnv, pTier2Subnet1Cidr]
           pTier2Subnet2Cidr: !FindInMap [EnvMap, !Ref pEnv, pTier2Subnet2Cidr]
           pNotificationList: !FindInMap [EnvMap, !Ref pEnv, pNotificationList]
+          pImageTag: !Ref pImageTag
 
 Outputs:
 

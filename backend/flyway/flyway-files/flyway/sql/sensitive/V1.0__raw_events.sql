@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS raw_events (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, 
+  event_type VARCHAR(64), 
+  type_version VARCHAR(16), 
+  event JSONB NOT NULL, 
+  create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

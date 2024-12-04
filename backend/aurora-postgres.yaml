@@ -11,6 +11,10 @@ Parameters:
     Description: The name of the environment this is going into (staging, etc)
     Type: String
 
+  pImageTag:
+    Description: The Docker Lambda-Function Image Tag
+    Type: String
+
   DBType:
     Description: The type of data this DB will host
     Type: String
@@ -344,6 +348,7 @@ Resources:
         rules_to_suppress:
           - id: F26
     Properties:
+      DBClusterIdentifier: !Sub ${DBName}-cluster
       Engine: aurora-postgresql
       EngineVersion: !Ref DBEngineVersion
       AutoMinorVersionUpgrade: true
@@ -663,7 +668,14 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DBName}Bootstrap
-   
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DBName}Flyway
+              - Effect: Allow
+                Action:
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource:
+                  - !Sub arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${pEnv}-aloe-flyway
+
   DBBootStrapLambdaFn:
     Type: AWS::Serverless::Function
     Properties:
@@ -685,7 +697,7 @@ Resources:
       Environment:
         Variables:
           MasterUserSecretArn: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
-          DBHost: !GetAtt AuroraDBCluster.Endpoint.Address
+          DBHost: !Ref DnsRecord
           DBPort: !GetAtt AuroraDBCluster.Endpoint.Port
           DBName: !Ref DBName
           DbType: !Ref DBType
@@ -722,7 +734,7 @@ Resources:
         - x86_64
       MemorySize: 512
       Role: !GetAtt DBBootStrapLambdaRole.Arn
-      Timeout: 120
+      Timeout: 600
       ReservedConcurrentExecutions: 1
       Environment:
         Variables:
@@ -746,6 +758,46 @@ Resources:
     Version: "1.0"
     Properties:
       ServiceToken: !GetAtt DBBootStrapLambdaInvokerFn.Arn
+      TargetFunctionName: !Sub ${DBName}Bootstrap
+
+  FlywayLambdaFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${DBName}Flyway
+      PackageType: Image
+      ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${pEnv}-aloe-flyway:${pImageTag}"
+      MemorySize: 512
+      Role: !GetAtt DBBootStrapLambdaRole.Arn
+      Timeout: 600
+      ReservedConcurrentExecutions: 1
+      VpcConfig: 
+        SecurityGroupIds: 
+          - !Ref ClusterSecurityGroup
+        SubnetIds: !Ref Subnets
+        Ipv6AllowedForDualStack: true
+      Environment:
+        Variables:
+          MASTER_SECRET_ARN: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
+          FLYWAY_URL: !Sub "jdbc:postgresql://${DnsRecord}:${AuroraDBCluster.Endpoint.Port}/${DBName}"
+          FLYWAY_LOCATIONS: !Sub "filesystem:/flyway/sql/${DBType}"
+          FLYWAY_PLACEHOLDERS_DATABASE_SCHEMA:  public
+          FLYWAY_PLACEHOLDERS_DATABASE_NAME: !Ref DBName
+          FLYWAY_PLACEHOLDERS_ENDPOINT:  !Ref DnsRecord
+          FLYWAY_PLACEHOLDERS_PORT: !GetAtt AuroraDBCluster.Endpoint.Port
+          FLYWAY_PLACEHOLDERS_REP_USER: !Ref DBUsername
+          USE_AWS_REGION: !Ref AWS::Region
+
+  FlywayLambdaFnTrigger:
+    Type: Custom::FlywayTrigger
+    DependsOn:
+      - AuroraDBFirstInstance
+      - DBBootStrapLambdaFnTrigger
+      - FlywayLambdaFn
+#    Version: !Sub "${pImageTag}"
+    Properties:
+      ServiceToken: !GetAtt DBBootStrapLambdaInvokerFn.Arn
+      TargetFunctionName: !Sub ${DBName}Flyway
+      pImageTag: !Ref pImageTag
 
   DnsRecord:
     Type: AWS::Route53::RecordSet
@@ -787,7 +839,7 @@ Resources:
 Outputs:
   ClusterEndpoint:
     Description: Aurora Cluster/Writer Endpoint
-    Value: !GetAtt AuroraDBCluster.Endpoint.Address
+    Value: !Sub ${DBName}.${HostedZoneName}
   ReaderEndpoint:
     Description: Aurora Reader Endpoint
     Value: !GetAtt AuroraDBCluster.ReadEndpoint.Address
@@ -811,7 +863,7 @@ Outputs:
     Value: !Join
              - ''
              - - 'psql --host='
-               - !GetAtt AuroraDBCluster.Endpoint.Address
+               - !Sub ${DBName}.${HostedZoneName}
                - ' --port='
                - !GetAtt AuroraDBCluster.Endpoint.Port
                - ' --username='

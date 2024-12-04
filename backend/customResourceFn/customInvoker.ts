@@ -8,7 +8,7 @@ const lambdaClient = new LambdaClient({});
 export const handler = async (event: CloudFormationCustomResourceEvent, context: any): Promise<CloudFormationCustomResourceResponse> => {
   console.log('Received event:', JSON.stringify(event, null, 2));
 
-  const targetFunctionName = process.env.TargetFunctionName;
+  const targetFunctionName = event.ResourceProperties.TargetFunctionName;
   if (!targetFunctionName) {
     throw new Error('TargetFunctionName environment variable is not set');
   }

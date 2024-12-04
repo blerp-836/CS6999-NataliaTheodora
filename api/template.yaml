@@ -235,23 +235,16 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: anonymize-sqs-injest-queue
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt AnonymizeSQSInjestDLQ.Arn
+        maxReceiveCount: 5
+  
+  AnonymizeSQSInjestDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: anonymize-sqs-injest-dlq
+      MessageRetentionPeriod: 345600  # 4 days
 
-#  AnonymizeSQSQueuePolicy:
-#    Type: AWS::SQS::QueuePolicy
-#    Properties:
-#      Queues:
-#        - !Ref AnonymizeSQSInjestQueue
-#      PolicyDocument:
-#        Version: 2012-10-17
-#        Statement:
-#          - Effect: Allow
-#            Principal: "*"
-#            Action: "sqs:SendMessage"
-#            Resource: !GetAtt AnonymizeSQSInjestQueue.Arn
-#            Condition:
-#              ArnEquals:
-#                "aws:SourceArn": !Ref AnalyticsApi
-#
   AnonymizeSQSInjestEventSource:
     Type: AWS::Lambda::EventSourceMapping
     Properties:

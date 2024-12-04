@@ -23,6 +23,7 @@ Metadata:
       - pEnv
       - pOrg
       - pSystem
+      - pImageTag
     - Label:
         default: Overall VPC Configuration
       Parameters:
@@ -74,6 +75,8 @@ Metadata:
         default: Business Scope
       pSystem:
         default: System Identifier
+      pImageTag:
+        default: Docker Lambda-Function Image Tag
       pCidr:
         default: VPC CIDR Block
       pNumAzs:
@@ -144,6 +147,10 @@ Parameters:
     Type: String
     Description: Used to qualify IAM role path
     Default: infra
+
+  pImageTag:
+    Type: String
+    Description: Used to identity the tagged image for functions
 
   pCidr:
     Type: String
@@ -1006,6 +1013,7 @@ Resources:
       Location: aurora-postgres.yaml
       Parameters:
         pEnv: !Ref pEnv
+        pImageTag: !Ref pImageTag
         DBName: !Sub ${pEnv}AiAloeSensitiveDb
         DBType: sensitive
         IamUser: aloesens
@@ -1043,6 +1051,7 @@ Resources:
       Location: aurora-postgres.yaml
       Parameters:
         pEnv: !Ref pEnv
+        pImageTag: !Ref pImageTag
         DBName: !Sub ${pEnv}AiAloePublishedDb
         DBType: published
         IamUser: aloesens

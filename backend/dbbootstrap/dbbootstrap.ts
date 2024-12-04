@@ -159,6 +159,8 @@ export async function handler(event: any, context: any) {
       const sqlStatements = dbType === 'sensitive' ? sensitiveDbSqlStatements : publishDbSqlStatements;
       await executeSqlStatements(client, sqlStatements);
       responseData.Data = 'SUCCESS: Executed SQL statements successfully.';
+    } else if (event.RequestType === 'Update') {
+      responseData.Data = 'Update: Update not supported, but not a failure either.';
     } else {
       responseData.Data = `${event.RequestType} is an unsupported stack operation for this lambda function.`;
       return {
