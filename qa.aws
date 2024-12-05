@@ -1,0 +1,6 @@
+SSO_ACCOUNT_NAME=na
+AWS_REGION=us-east-1
+SAM_CONFIG_ENV=qa
+
+declare -g -A DOCKER_IMAGES
+DOCKER_IMAGES['qa-aloe-flyway']='backend/flyway'

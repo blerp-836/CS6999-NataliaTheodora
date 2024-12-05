@@ -107,6 +107,7 @@ checkDependencies() {
   which aws 2>&1 > /dev/null || die "This script requires the AWS CLI tools installed"
   which docker 2>&1 > /dev/null || die "This script requires docker installed"
   which yq 2>&1 > /dev/null || die "This script requires yq installed (https://github.com/mikefarah/yq)"
+  which sam 2>&1 > /dev/null || die "This script requires AWS SAM installed (https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)"
 }
 
 login() {

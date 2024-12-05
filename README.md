@@ -8,15 +8,11 @@
 ** Later we can create a docker container with all these tools so that the host need only to have Docker installed.
 
 ## Build and Deploy
-1. run npm install in the following directories
-    * api/caliper
-    * api/eduapi
-1. run sam build in the top-level directory
-1. Setup AWS account access in your terminal session
-    * preferably, use temporary credentials provided by the AWS Identity Center access portal
-1. run sam deploy --config-env qa
-    * if you omit "--config-env qa", SAM will deploy the default environment
-1. Once the deploy is complete, the output will  include the URL of the API
-1. Obtain the client ids and secrets from the AWS Console
-    *  Cognito->User Pools->App Integration->App client list
- 
+1. If an environment stack file does not already exist for the environment, create one
+    * refer to [dev.aws](./dev.aws) and [qa.aws](./qa.aws) for examples
+1. Run the deploy.sh script found in the top-level directory
+    * ex.
+      ```bash
+      ./deploy.sh -s dev
+      ```
+    * the script will instruct you to install dependencies, if you don't already have them
