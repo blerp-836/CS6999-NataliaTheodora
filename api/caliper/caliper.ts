@@ -1,26 +1,30 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import CaliperValidator from './CaliperValidator.ts';
-import fs from 'fs/promises';
-import { Client, ClientConfig } from 'pg';
-import { Signer } from "@aws-sdk/rds-signer";
+import CaliperValidator from './CaliperValidator';
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
-// RDS settings
-const dbHost = ensureEnvVar('DBHost');
-const dbPort = ensureEnvVar('DBPort');
-const dbName = ensureEnvVar('DBName');
-const dbIamUser = ensureEnvVar('DBIamUser');
-const awsRegion = ensureEnvVar('AwsRegion');
-
-// Caliper Schema Validators
+let initialized = false;
 const caliperv11SchemaDir = '/opt/caliper/v1_1';
-const validatorv11 = new CaliperValidator(caliperv11SchemaDir);
 const caliperv12SchemaDir = '/opt/caliper/v1_2';
-const validatorv12 = new CaliperValidator(caliperv12SchemaDir);
 
-// SQS queue settings
-const sqsClient = new SQSClient({ region: awsRegion });
-const AnonymizeSQSQueueUrl = ensureEnvVar('AnonymizeSQSQueueUrl');
+let validatorv11: CaliperValidator;
+let validatorv12: CaliperValidator;
+let sqsClient: SQSClient;
+let sqsInjestQueueUrl: string;
+
+function initialize() {
+  if (!initialized || process.env['underTest'] === 'true') {
+    // Caliper Schema Validators
+    validatorv11 = new CaliperValidator(caliperv11SchemaDir);
+    validatorv12 = new CaliperValidator(caliperv12SchemaDir);
+
+    // SQS queue settings
+    const awsRegion = ensureEnvVar('AwsRegion');
+    sqsClient = new SQSClient({ region: awsRegion });
+    sqsInjestQueueUrl = ensureEnvVar('SQSInjestQueueUrl');
+
+    initialized = true;
+  }
+}
 
 /**
  *
@@ -33,6 +37,8 @@ const AnonymizeSQSQueueUrl = ensureEnvVar('AnonymizeSQSQueueUrl');
  */
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    initialize();
+
     try {
         // validate the body contains json data
         if (!event.body) {
@@ -66,6 +72,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             };
         }
 
+        console.log('Validation errors:', validationErrors);
         if (validationErrors.length === 0) {
           console.log('Validation passed. No errors found.');
         } else {
@@ -82,18 +89,16 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // loop through the data and save each event to the database
         for (const [index, event] of data.data.entries()) {
           const dataType = event.type;
-          const saveResult = await saveData({eventData: event, dataType: dataType, namespaceVersion: namespaceVersion});
-          console.log(`saving event ${index}: ${saveResult.status}`);
 
           // put the id and data on the SQS queue to be anonymized later
-          await sendMessageToSQS({ id: saveResult.id, dataType: dataType, namespaceVersion: namespaceVersion, eventData: event });
+          await sendMessageToSQS({dataType: dataType, namespace: 'caliper', namespaceVersion: namespaceVersion, eventData: event });
         }
 
         // Send a success response
         return {
             statusCode: 200,
             body: JSON.stringify({
-                message: 'hello caliper',
+                message: 'successfully validated caliper events',
             }),
         };
     } catch (err) {
@@ -130,116 +135,14 @@ function ensureEnvVar(name: string): string {
   return value;
 }
 
-/**
- * Retrieves an authentication token for database connection using AWS IAM authentication.
- * 
- * @returns {Promise<string>} A promise that resolves to the authentication token
- * @throws {Error} If token generation fails
- */
-async function getAuthToken(): Promise<string> {
-    const signer = new Signer({
-      hostname: dbHost,
-      port: parseInt(dbPort, 10),
-      region: awsRegion,
-      username: dbIamUser
-    });
-  
-    return signer.getAuthToken();
-  }
-  
-/**
- * Creates a new database connection using AWS IAM authentication.
- * 
- * @returns {Promise<Client>} A promise that resolves to a connected PostgreSQL client
- * @throws {Error} If connection creation fails
- */
-async function createDbConnection(): Promise<Client> {
-  const authToken = await getAuthToken();
-
-  const clientConfig: ClientConfig = {
-    host: dbHost,
-    port: parseInt(dbPort, 10),
-    database: dbName,
-    user: dbIamUser,
-    password: authToken,
-    ssl: {
-      rejectUnauthorized: false,
-      ca: fs.readFile('/opt/ssl/rds-combined-ca-bundle.pem').toString(),
-    }
-  };
-  const client = new Client(clientConfig);
-
-  await client.connect();
-  return client;
-}
-
 interface RawData {
   id?: string;
   dataType: string;
+  namespace: string;
   namespaceVersion: string;
   eventData: string;
 }
   
-/**
- * Saves data to the raw_events table in the database.
- * 
- * @param {RawData} data - The data object to be stored
- * @param {string} dataType - The type of event being stored
- * @param {string} typeVersion - The version of the data type
- * @returns {Promise<Object>} A promise that resolves to an object containing:
- *   - status: JSON string with message, id, and timestamp
- * @throws {Error} If database operations fail
- * 
- * @example
- * try {
- *   const result = await saveData(
- *     { key: 'value' },
- *     'USER_EVENT',
- *     '1.0'
- *   );
- *   console.log(result.status);
- * } catch (error) {
- *   console.error('Failed to save data:', error);
- * }
- */
-async function saveData(data: RawData): Promise<any> {
-  let client: Client | null = null;
-
-  try {
-    client = await createDbConnection();
-
-    // Prepare the INSERT query with parameterized values for security
-    const query = `
-      INSERT INTO raw_events 
-      (event, event_type, type_version) 
-      VALUES ($1, $2, $3)
-      RETURNING id, create_date`;
-    
-    const values = [JSON.stringify(data.eventData), data.dataType, data.namespaceVersion];
-    const result = await client.query(query, values);
-
-    return {
-      status: JSON.stringify({
-        message: 'Data saved successfully',
-        id: result.rows[0].id,
-        timestamp: result.rows[0].created_at
-      }),
-      id: result.rows[0].id
-    };
-
-  } catch (error) {
-    console.error('Database error:', error);
-    
-    // More specific error handling
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-
-  } finally {
-    if (client) {
-      await client.end();
-    }
-  }
-}
-
 /**
  * Sends a message to an SQS queue.
  * 
@@ -258,7 +161,7 @@ async function saveData(data: RawData): Promise<any> {
 async function sendMessageToSQS(data: RawData): Promise<string | undefined> {
   try {
     const params = {
-      QueueUrl: AnonymizeSQSQueueUrl,
+      QueueUrl: sqsInjestQueueUrl,
       MessageBody: JSON.stringify(data)
     };
 

@@ -163,8 +163,11 @@ Parameters:
   HostedZoneName:
     Description: Route53 hosted zone name to use for the database's DNS record
     Type: String
-
-
+  pCreateAlarms:
+    Type: String
+    Default: 'False'
+    AllowedValues: ['True','False']
+    Description: Create CloudWatch Alarms
     
 ###############################################################################
 # Parameter groups
@@ -241,6 +244,8 @@ Conditions:
   IsReplica: !Or [!Equals [!Ref EnvironmentStage, pre-prod], Condition: IsProd]
   DoDBBootStrap: !Not [Condition: IsUseDBSnapshot]
   DoEnableIAM: !Not [!Equals [!Ref DBEngineVersion, 9.6.8]]
+  IsCreateAlarms: !Equals [!Ref pCreateAlarms, 'True']
+  IsReplicaAndCreateAlarms: !And [Condition: IsReplica, Condition: IsCreateAlarms]
   
   
 
@@ -270,6 +275,7 @@ Resources:
         
   DBSNSTopic:
     Type: AWS::SNS::Topic
+    Condition: IsCreateAlarms
     Properties:
       KmsMasterKeyId: !Ref KmsKey
       Subscription:
@@ -469,6 +475,7 @@ Resources:
           
   CPUUtilizationAlarm1:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsCreateAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -489,7 +496,7 @@ Resources:
       TreatMissingData: notBreaching
       
   CPUUtilizationAlarm2:
-    Condition: IsReplica
+    Condition: IsReplicaAndCreateAlarms
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
@@ -512,6 +519,7 @@ Resources:
       
   MaxUsedTxIDsAlarm1:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsCreateAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -532,7 +540,7 @@ Resources:
       TreatMissingData: notBreaching
       
   MaxUsedTxIDsAlarm2:
-    Condition: IsReplica
+    Condition: IsReplicaAndCreateAlarms
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
@@ -555,6 +563,7 @@ Resources:
 
   FreeLocalStorageAlarm1:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsCreateAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -575,7 +584,7 @@ Resources:
       TreatMissingData: notBreaching
       
   FreeLocalStorageAlarm2:
-    Condition: IsReplica
+    Condition: IsReplicaAndCreateAlarms
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
@@ -598,6 +607,7 @@ Resources:
       
   DatabaseClusterEventSubscription:
     Type: AWS::RDS::EventSubscription
+    Condition: IsCreateAlarms
     Properties:
       EventCategories:
       - failover
@@ -609,6 +619,7 @@ Resources:
 
   DatabaseInstanceEventSubscription:
     Type: AWS::RDS::EventSubscription
+    Condition: IsCreateAlarms
     Properties:
       EventCategories:
       - availability
@@ -627,6 +638,7 @@ Resources:
       
   DBParameterGroupEventSubscription:
     Type: AWS::RDS::EventSubscription
+    Condition: IsCreateAlarms
     Properties:
       EventCategories:
       - configuration change
@@ -791,13 +803,15 @@ Resources:
     Type: Custom::FlywayTrigger
     DependsOn:
       - AuroraDBFirstInstance
-      - DBBootStrapLambdaFnTrigger
       - FlywayLambdaFn
-#    Version: !Sub "${pImageTag}"
     Properties:
       ServiceToken: !GetAtt DBBootStrapLambdaInvokerFn.Arn
       TargetFunctionName: !Sub ${DBName}Flyway
       pImageTag: !Ref pImageTag
+      DBBootStrap: !If
+        - DoDBBootStrap
+        - !Ref DBBootStrapLambdaFnTrigger
+        - !Ref AWS::NoValue
 
   DnsRecord:
     Type: AWS::Route53::RecordSet
@@ -839,7 +853,8 @@ Resources:
 Outputs:
   ClusterEndpoint:
     Description: Aurora Cluster/Writer Endpoint
-    Value: !Sub ${DBName}.${HostedZoneName}
+    Value: !GetAtt AuroraDBCluster.Endpoint.Address
+#    Value: !Sub ${DBName}.${HostedZoneName}
   ReaderEndpoint:
     Description: Aurora Reader Endpoint
     Value: !GetAtt AuroraDBCluster.ReadEndpoint.Address

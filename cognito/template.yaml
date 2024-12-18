@@ -6,6 +6,10 @@ Description: >
   SAM Template for auth resources
 
 Parameters:
+  pEnv:
+    Type: String
+    Description: Name of the Environment
+
   SSMPrefix:
     Type: String
 
@@ -13,7 +17,7 @@ Resources:
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub ${AWS::StackName}-UserPool
+      UserPoolName: !Sub ${pEnv}UserPool
       AutoVerifiedAttributes:
         - email
 

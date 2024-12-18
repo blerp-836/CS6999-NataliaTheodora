@@ -27,6 +27,7 @@ Mappings:
       pTier2Subnet1Cidr: 10.1.2.0/24
       pTier2Subnet2Cidr: 10.1.3.0/24
       pNotificationList: abragg@unicon.net
+      pCreateAlarms: 'True'
     qa:
       pVpcName: qa-ai-aloe-vpc
       pOrg: ai-aloe-qa
@@ -39,7 +40,7 @@ Mappings:
       pTier2Subnet1Cidr: 10.2.2.0/24
       pTier2Subnet2Cidr: 10.2.3.0/24
       pNotificationList: tcouper@1edtech.org
-
+      pCreateAlarms: 'True'
 
 Resources:
 
@@ -48,6 +49,7 @@ Resources:
       Properties:
         Location: cognito/template.yaml
         Parameters:
+          pEnv: !Ref pEnv
           SSMPrefix: !Ref AWS::StackName
 
     API:
@@ -55,19 +57,22 @@ Resources:
       Properties:
         Location: api/template.yaml
         Parameters:
-          CognitoUserPoolArn: !GetAtt Auth.Outputs.CognitoUserPoolArn
-          SensitiveDBHost: !GetAtt Backend.Outputs.SensitiveDataDatabaseEndpoint
-          SensitiveDBPort: !GetAtt Backend.Outputs.SensitiveDataDatabaseEndpointPort
-          SensitiveDBName: !GetAtt Backend.Outputs.SensitiveDataDatabaseDBName
-          SensitiveDBIamUser: !GetAtt Backend.Outputs.SensitiveDataDatabaseIamUser
-          SensitiveDBSecurityGroup: !GetAtt Backend.Outputs.SensitiveDataDatabaseSecurityGroup
-          PublishedDBHost: !GetAtt Backend.Outputs.PublishedDataDatabaseEndpoint
-          PublishedDBPort: !GetAtt Backend.Outputs.PublishedDataDatabaseEndpointPort
-          PublishedDBName: !GetAtt Backend.Outputs.PublishedDataDatabaseDBName
-          PublishedDBIamUser: !GetAtt Backend.Outputs.PublishedDataDatabaseIamUser
-          PublishedDBSecurityGroup: !GetAtt Backend.Outputs.PublishedDataDatabaseSecurityGroup
-          PrivateSubnets: !GetAtt Backend.Outputs.PrivateSubnets
-          EncryptionKey: !Ref pEncryptionKey
+          pEnv: !Ref pEnv
+          pCognitoUserPoolArn: !GetAtt Auth.Outputs.CognitoUserPoolArn
+          pSensitiveDBHost: !GetAtt Backend.Outputs.SensitiveDataDatabaseEndpoint
+          pSensitiveDBPort: !GetAtt Backend.Outputs.SensitiveDataDatabaseEndpointPort
+          pSensitiveDBName: !GetAtt Backend.Outputs.SensitiveDataDatabaseDBName
+          pSensitiveDBIamUser: !GetAtt Backend.Outputs.SensitiveDataDatabaseIamUser
+          pSensitiveDBSecurityGroup: !GetAtt Backend.Outputs.SensitiveDataDatabaseSecurityGroup
+          pPublishedDBHost: !GetAtt Backend.Outputs.PublishedDataDatabaseEndpoint
+          pPublishedDBPort: !GetAtt Backend.Outputs.PublishedDataDatabaseEndpointPort
+          pPublishedDBName: !GetAtt Backend.Outputs.PublishedDataDatabaseDBName
+          pPublishedDBIamUser: !GetAtt Backend.Outputs.PublishedDataDatabaseIamUser
+          pPublishedDBSecurityGroup: !GetAtt Backend.Outputs.PublishedDataDatabaseSecurityGroup
+          pPrivateSubnets: !GetAtt Backend.Outputs.PrivateSubnets
+          pEncryptionKey: !Ref pEncryptionKey
+          pCreateAlarms: !FindInMap [EnvMap, !Ref pEnv, pCreateAlarms]
+          pNotificationList: !FindInMap [EnvMap, !Ref pEnv, pNotificationList]
 
     Backend:
       Type: AWS::Serverless::Application
@@ -86,6 +91,7 @@ Resources:
           pTier2Subnet2Cidr: !FindInMap [EnvMap, !Ref pEnv, pTier2Subnet2Cidr]
           pNotificationList: !FindInMap [EnvMap, !Ref pEnv, pNotificationList]
           pImageTag: !Ref pImageTag
+          pCreateAlarms: !FindInMap [EnvMap, !Ref pEnv, pCreateAlarms]
 
 Outputs:
 

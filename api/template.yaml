@@ -6,48 +6,67 @@ Description: >
   SAM Template for the API of the reference pipeline
 
 Parameters:
-  CognitoUserPoolArn:
+  pEnv:
+    Type: String
+    Description: Name of the Environment
+  pCognitoUserPoolArn:
     Type: String
     Description: ARN of the Cognito User Pool
-  SensitiveDBIamUser:
+  pSensitiveDBIamUser:
     Type: String
     Description: The IAM username with access to the sensitive data database
-  SensitiveDBHost:
+  pSensitiveDBHost:
     Description: Database host name for the "sensitive" data database
     Type: String  
-  SensitiveDBName:
+  pSensitiveDBName:
     Description: Database Name for "sensitive" data
     Type: String  
-  SensitiveDBPort:
+  pSensitiveDBPort:
     Description: TCP/IP Port for the "Sensitive" Database Instance
     Type: Number
     Default: 5432
-  SensitiveDBSecurityGroup:
+  pSensitiveDBSecurityGroup:
     Description: Security Group for the "Sensitive" Database Instance
     Type: String
-  PublishedDBIamUser:
+  pPublishedDBIamUser:
     Type: String
     Description: The IAM username with access to the "published" data database
-  PublishedDBHost:
+  pPublishedDBHost:
     Description: Database host name for the "published" data database
     Type: String  
-  PublishedDBName:
+  pPublishedDBName:
     Description: Database Name for "published" data
     Type: String  
-  PublishedDBPort:
+  pPublishedDBPort:
     Description: TCP/IP Port for the "Published" Database Instance
     Type: Number
     Default: 5432
-  PublishedDBSecurityGroup:
+  pPublishedDBSecurityGroup:
     Description: Security Group for the "Published" Database Instance
     Type: String
-  PrivateSubnets:
+  pPrivateSubnets:
     Description: Private subnets within the same VPC as the database
     Type: List<AWS::EC2::Subnet::Id>
-  EncryptionKey:
+  pEncryptionKey:
     Type: String
     NoEcho: true
     Description: The encryption key for the psuedo anonymization
+  pCreateAlarms:
+    Type: String
+    Default: 'False'
+    AllowedValues: ['True','False']
+    Description: Create CloudWatch Alarms
+  pNotificationList:
+    Type: String
+    Description: The Email notification list is used to configure a SNS topic for sending cloudwatch alarm and RDS Event notifications
+    AllowedPattern: '^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$'
+    ConstraintDescription: provide a valid email address.
+
+Conditions:
+  CreateAlarms: !Equals 
+    - !Ref pCreateAlarms
+    - 'True'
+
 Resources:
 
   AnalyticsApi:
@@ -58,7 +77,7 @@ Resources:
         DefaultAuthorizer: ClientCognitoAuthorizer
         Authorizers:
           ClientCognitoAuthorizer:
-            UserPoolArn: !Ref CognitoUserPoolArn
+            UserPoolArn: !Ref pCognitoUserPoolArn
             AuthorizationScopes:
               - analytics/api
 #      TODO: author API documentation
@@ -70,58 +89,10 @@ Resources:
 #          Parameters:
 #            Location: ./openapi.yaml
 
-#  GenerateFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      Handler: generateData.lambdaHandler
-#      CodeUri: generate/
-#      Runtime: nodejs20.x
-#      Architectures:
-#        - x86_64
-#      Events:
-#        EduApiData:
-#          Type: Api
-#          Properties:
-#            RestApiId: !Ref AnalyticsApi
-#            Path: /generate/{nameSpace}/{version}/{schema}
-#            Method: GET
-#      Environment:
-#        Variables:
-#          NODE_OPTIONS: --enable-source-maps
-#      Layers:
-#        - !Ref SchemaLayer
-#      Policies:
-#        - AWSLambdaBasicExecutionRole
-#    Metadata: # Manage esbuild properties
-#      BuildMethod: esbuild
-#      BuildProperties:
-#        Minify: false
-#        Target: "es2020"
-#        Sourcemap: true
-#        EntryPoints: 
-#          - generateData.ts
-
-  # Remove this at a later date
-  # just needed to verify that authentication applies to the root of the API
-  AppFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: app.handler
-      Runtime: nodejs20.x
-      CodeUri: src/
-      Events:
-        RootEvent:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AnalyticsApi
-            Path: /
-            Method: POST
-      Policies:
-        - AWSLambdaBasicExecutionRole
-
   EduApiFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${pEnv}EduApiIngestFunction
       Handler: eduapi.lambdaHandler
       CodeUri: eduapi/
       Runtime: nodejs20.x
@@ -131,8 +102,8 @@ Resources:
         - x86_64
       VpcConfig: 
         SecurityGroupIds: 
-          - !Ref SensitiveDBSecurityGroup
-        SubnetIds: !Ref PrivateSubnets
+          - !Ref pSensitiveDBSecurityGroup
+        SubnetIds: !Ref pPrivateSubnets
         Ipv6AllowedForDualStack: true
       Events:
         EduApiData:
@@ -143,11 +114,7 @@ Resources:
             Method: POST
       Environment:
         Variables:
-          AnonymizeSQSQueueUrl: !Ref AnonymizeSQSInjestQueue
-          DBHost: !Ref SensitiveDBHost
-          DBPort: !Ref SensitiveDBPort
-          DBName: !Ref SensitiveDBName
-          DBIamUser: !Ref SensitiveDBIamUser
+          SQSInjestQueueUrl: !Ref SQSInjestQueue
           AwsRegion: !Ref AWS::Region
           NODE_OPTIONS: --enable-source-maps
       Layers:
@@ -159,9 +126,9 @@ Resources:
               Effect: Allow
               Action:
                 - rds-db:connect
-              Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${SensitiveDBIamUser}
+              Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${pSensitiveDBIamUser}
         - SQSSendMessagePolicy:
-            QueueName: !GetAtt AnonymizeSQSInjestQueue.QueueName
+            QueueName: !GetAtt SQSInjestQueue.QueueName
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -174,6 +141,7 @@ Resources:
   CaliperFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${pEnv}CaliperIngestFunction
       Handler: caliper.lambdaHandler
       CodeUri: caliper/
       Runtime: nodejs20.x
@@ -183,8 +151,8 @@ Resources:
         - x86_64
       VpcConfig: 
         SecurityGroupIds: 
-          - !Ref SensitiveDBSecurityGroup
-        SubnetIds: !Ref PrivateSubnets
+          - !Ref pSensitiveDBSecurityGroup
+        SubnetIds: !Ref pPrivateSubnets
         Ipv6AllowedForDualStack: true
       Events:
         EduApiData:
@@ -195,25 +163,15 @@ Resources:
             Method: POST
       Environment:
         Variables:
-          AnonymizeSQSQueueUrl: !Ref AnonymizeSQSInjestQueue
-          DBHost: !Ref SensitiveDBHost
-          DBPort: !Ref SensitiveDBPort
-          DBName: !Ref SensitiveDBName
-          DBIamUser: !Ref SensitiveDBIamUser
+          SQSInjestQueueUrl: !Ref SQSInjestQueue
           AwsRegion: !Ref AWS::Region
           NODE_OPTIONS: --enable-source-maps
       Layers:
         - !Ref SchemaLayer
       Policies:
         - AWSLambdaBasicExecutionRole
-        - Statement:
-            - Sid: RDSConnectPolicy
-              Effect: Allow
-              Action:
-                - rds-db:connect
-              Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${SensitiveDBIamUser}
         - SQSSendMessagePolicy:
-            QueueName: !GetAtt AnonymizeSQSInjestQueue.QueueName
+            QueueName: !GetAtt SQSInjestQueue.QueueName
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -223,6 +181,81 @@ Resources:
         EntryPoints: 
           - caliper.ts
 
+  SQSInjestQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: sqs-injest-queue
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt SQSInjestDLQ.Arn
+        maxReceiveCount: 5
+  
+  SQSInjestDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: sqs-injest-dlq
+      MessageRetentionPeriod: 345600  # 4 days
+
+  SQSInjestEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      FunctionName: !Ref InjestDbWriterFunction
+      EventSourceArn: !GetAtt SQSInjestQueue.Arn
+      BatchSize: 10
+      MaximumBatchingWindowInSeconds: 10
+      Enabled: true
+      ScalingConfig:
+        MaximumConcurrency: 100
+      FunctionResponseTypes:
+        - ReportBatchItemFailures
+
+  InjestDbWriterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${pEnv}IngestDbWriterFunction
+      Handler: db-writer.lambdaHandler
+      CodeUri: db-writer/
+      Runtime: nodejs20.x
+      MemorySize: 256
+      Timeout: 30
+      Architectures:
+        - x86_64
+      VpcConfig: 
+        SecurityGroupIds: 
+          - !Ref pSensitiveDBSecurityGroup
+        SubnetIds: !Ref pPrivateSubnets
+        Ipv6AllowedForDualStack: true
+      Environment:
+        Variables:
+          AnonymizeSQSQueueUrl: !Ref AnonymizeSQSQueue
+          DBHost: !Ref pSensitiveDBHost
+          DBPort: !Ref pSensitiveDBPort
+          DBName: !Ref pSensitiveDBName
+          DBIamUser: !Ref pSensitiveDBIamUser
+          AwsRegion: !Ref AWS::Region
+          NODE_OPTIONS: --enable-source-maps
+      Layers:
+        - !Ref SchemaLayer
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Sid: RDSConnectPolicy
+              Effect: Allow
+              Action:
+                - rds-db:connect
+              Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${pSensitiveDBIamUser}
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt AnonymizeSQSQueue.QueueName
+        - SQSPollerPolicy:
+            QueueName: !GetAtt SQSInjestQueue.QueueName
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+          - db-writer.ts
+
   SchemaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -231,34 +264,37 @@ Resources:
       CompatibleRuntimes:
         - nodejs20.x
 
-  AnonymizeSQSInjestQueue:
+  AnonymizeSQSQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: anonymize-sqs-injest-queue
+      QueueName: anonymize-sqs-queue
       RedrivePolicy:
-        deadLetterTargetArn: !GetAtt AnonymizeSQSInjestDLQ.Arn
+        deadLetterTargetArn: !GetAtt AnonymizeSQSDLQ.Arn
         maxReceiveCount: 5
   
-  AnonymizeSQSInjestDLQ:
+  AnonymizeSQSDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: anonymize-sqs-injest-dlq
+      QueueName: anonymize-sqs-dlq
       MessageRetentionPeriod: 345600  # 4 days
 
-  AnonymizeSQSInjestEventSource:
+  AnonymizeSQSEventSource:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
-      FunctionName: !Ref AnonymizeSQSInjestFunction
-      EventSourceArn: !GetAtt AnonymizeSQSInjestQueue.Arn
+      FunctionName: !Ref AnonymizeSQSFunction
+      EventSourceArn: !GetAtt AnonymizeSQSQueue.Arn
       BatchSize: 10
       MaximumBatchingWindowInSeconds: 10
       Enabled: true
       ScalingConfig:
         MaximumConcurrency: 100
+      FunctionResponseTypes:
+        - ReportBatchItemFailures
 
-  AnonymizeSQSInjestFunction:
+  AnonymizeSQSFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${pEnv}AnonymizeSQSFunction
       Handler: pseudoPii.handler
       CodeUri: pseudoPii/
       Runtime: nodejs20.x
@@ -268,30 +304,30 @@ Resources:
         - x86_64
       VpcConfig: 
         SecurityGroupIds: 
-          - !Ref PublishedDBSecurityGroup
-        SubnetIds: !Ref PrivateSubnets
+          - !Ref pPublishedDBSecurityGroup
+        SubnetIds: !Ref pPrivateSubnets
         Ipv6AllowedForDualStack: true
       Environment:
         Variables:
-          DBHost: !Ref PublishedDBHost
-          DBPort: !Ref PublishedDBPort
-          DBName: !Ref PublishedDBName
-          DBIamUser: !Ref PublishedDBIamUser
+          DBHost: !Ref pPublishedDBHost
+          DBPort: !Ref pPublishedDBPort
+          DBName: !Ref pPublishedDBName
+          DBIamUser: !Ref pPublishedDBIamUser
           AwsRegion: !Ref AWS::Region
-          EncryptionKey: !Ref EncryptionKey
+          EncryptionKey: !Ref pEncryptionKey
           NODE_OPTIONS: --enable-source-maps
       Layers:
         - !Ref SchemaLayer
       Policies:
         - AWSLambdaBasicExecutionRole
         - SQSPollerPolicy:
-            QueueName: !GetAtt AnonymizeSQSInjestQueue.QueueName
+            QueueName: !GetAtt AnonymizeSQSQueue.QueueName
         - Statement:
             - Sid: RDSConnectPolicy
               Effect: Allow
               Action:
                 - rds-db:connect
-              Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${PublishedDBIamUser}
+              Resource: !Sub arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/${pPublishedDBIamUser}
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -300,6 +336,150 @@ Resources:
         Sourcemap: true
         EntryPoints: 
           - pseudoPii.ts
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Condition: CreateAlarms
+    Properties:
+      TopicName: !Sub ${pEnv}-queue-alarms
+      Subscription:
+        - Endpoint: !Ref pNotificationList
+          Protocol: email
+
+  # Message Age Alarms
+  InjestQueueAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateAlarms
+    Properties:
+      AlarmName: !Sub ${pEnv}-injest-queue-message-age
+      AlarmDescription: "Alarm when messages are older than 48 hours in injest queue"
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Dimensions:
+        - Name: QueueName
+          Value: sqs-injest-queue
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 172800  # 48 hours in seconds
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+      OKActions:
+        - !Ref AlarmTopic
+
+  AnonymizeQueueAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateAlarms
+    Properties:
+      AlarmName: !Sub ${pEnv}-anonymize-queue-message-age
+      AlarmDescription: "Alarm when messages are older than 48 hours in anonymize queue"
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Dimensions:
+        - Name: QueueName
+          Value: anonymize-sqs-queue
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 172800  # 48 hours in seconds
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+      OKActions:
+        - !Ref AlarmTopic
+
+  # Message Count Alarms for Main Queues
+  InjestQueueDepthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateAlarms
+    Properties:
+      AlarmName: !Sub ${pEnv}-injest-queue-depth
+      AlarmDescription: "Alarm when more than 5000 messages in injest queue"
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Dimensions:
+        - Name: QueueName
+          Value: sqs-injest-queue
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+      OKActions:
+        - !Ref AlarmTopic
+
+  AnonymizeQueueDepthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateAlarms
+    Properties:
+      AlarmName: !Sub ${pEnv}-anonymize-queue-depth
+      AlarmDescription: "Alarm when more than 5000 messages in anonymize queue"
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Dimensions:
+        - Name: QueueName
+          Value: anonymize-sqs-queue
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+      OKActions:
+        - !Ref AlarmTopic
+
+  # DLQ Alarms
+  InjestDLQDepthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateAlarms
+    Properties:
+      AlarmName: !Sub ${pEnv}-injest-dlq-depth
+      AlarmDescription: "Alarm when more than 500 messages in injest DLQ"
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Dimensions:
+        - Name: QueueName
+          Value: sqs-injest-dlq
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 500
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+      OKActions:
+        - !Ref AlarmTopic
+
+  AnonymizeDLQDepthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateAlarms
+    Properties:
+      AlarmName: !Sub ${pEnv}-anonymize-dlq-depth
+      AlarmDescription: "Alarm when more than 500 messages in anonymize DLQ"
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Dimensions:
+        - Name: QueueName
+          Value: anonymize-sqs-dlq
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 500
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+      OKActions:
+        - !Ref AlarmTopic
 
 Outputs:
 

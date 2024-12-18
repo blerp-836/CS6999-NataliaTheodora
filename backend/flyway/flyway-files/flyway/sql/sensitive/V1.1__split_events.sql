@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS eduapi_raw_events (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, 
+  type_version VARCHAR(16), 
+  event_type VARCHAR(64),
+  event JSONB NOT NULL, 
+  create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS caliper_raw_events (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, 
+  type_version VARCHAR(16), 
+  event_type VARCHAR(64),
+  event JSONB NOT NULL, 
+  create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+DROP TABLE IF EXISTS raw_events;

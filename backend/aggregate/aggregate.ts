@@ -35,12 +35,12 @@ async function aggregate(): Promise<any> {
     client = await createDbConnection(dbHost, dbPort, dbName, dbIamUser, awsRegion);
 
     // Prepare the eventCounts aggregation 
-    const dropEventCounts = `DROP TABLE IF EXISTS event_counts`;
+    const dropEventCounts = `DROP TABLE IF EXISTS caliper_event_counts`;
     const eventCounts = `
-      CREATE TABLE event_counts
+      CREATE TABLE caliper_event_counts
       AS
       SELECT event_type, count(*) 
-      FROM published_events GROUP BY event_type`;
+      FROM caliper_published_events GROUP BY event_type`;
     
     await client.query(dropEventCounts);
     await client.query(eventCounts);

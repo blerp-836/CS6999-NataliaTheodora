@@ -68,34 +68,51 @@ interface ProcessResult {
  * @returns {Promise<ProcessResult[]>} Array of processing results for each record
  */
 async function processBatch(records: SQSRecord[]): Promise<ProcessResult[]> {
-    // Process messages in parallel and get all results
-    const processPromises = records.map(record => processMessage(record));
-    const results = await Promise.allSettled(processPromises);
-    
-    return results.map((result, index) => {
-        if (result.status === 'fulfilled') {
-            return result.value;
-        } else {
-            return {
-                record: records[index],
-                success: false,
-                error: result.reason
-            };
-        }
-    });
+  const results: ProcessResult[] = [];
+  let client: Client | null = null;
+
+  try {
+    client = await createDbConnection(dbHost, dbPort, dbName, dbIamUser, awsRegion);
+    console.log('Connected to the database');
+
+    // Process messages sequentially
+    for (const record of records) {
+      try {
+        const result = await processMessage(record, client);
+        results.push(result);
+      } catch (error) {
+        results.push({
+          record,
+          success: false,
+          error
+        });
+      }
+    }
+    return results;
+  } catch (error) {
+    console.error('Failed to connect to the database:', error);
+    // Handle the error appropriately, e.g., by returning or throwing
+    throw error;
+  } finally {
+    if (client) {
+      await client.end();
+    }
+  }
 }
 
 /**
  * Processes an individual SQS message by parsing, anonymizing PII, and saving the data
  * @param {SQSRecord} record - Single SQS record to process
+ * @param {Client} client - Object containing the DB connection to use 
  * @returns {Promise<ProcessResult>} Result of processing the message
  */
-async function processMessage(record: SQSRecord): Promise<ProcessResult> {
+async function processMessage(record: SQSRecord, client: Client): Promise<ProcessResult> {
     try {
         const event = JSON.parse(record.body);
         findAndReplacePii(event);
         console.log('Successfully anonymized event:', JSON.stringify(event,null,2));
-        await saveData(event);
+        await saveData(event, client);
+        console.log('Successfully published event');
         
         return {
             record,
@@ -242,6 +259,7 @@ const pseudonymizeData = (text: string, entity: PIIEntity): string => {
 interface RawData {
   id: string;
   dataType: string;
+  namespace: string;
   namespaceVersion: string;
   eventData: string;
 }
@@ -249,6 +267,7 @@ interface RawData {
 /**
  * Saves anonymized event data to the published-data database
  * @param {RawData} data - Object containing event data to be stored
+ * @param {Client} client - Object containing the DB connection to use 
  * @returns {Promise<any>} Object containing save status and record ID
  * @throws {Error} If database operations fail
  * @example
@@ -259,40 +278,25 @@ interface RawData {
  * };
  * const result = await saveData(data);
  */
-async function saveData(data: RawData): Promise<any> {
-  let client: Client | null = null;
+async function saveData(data: RawData, client: Client): Promise<any> {
 
-  try {
-    client = await createDbConnection(dbHost, dbPort, dbName, dbIamUser, awsRegion);
+  // Prepare the INSERT query with parameterized values for security
+  console.log(`Saving data to published-data database: ${data.namespace}_published_events`);
+  const query = `
+    INSERT INTO ${data.namespace}_published_events 
+    (id, event, event_type, type_version) 
+    VALUES ($1, $2, $3, $4)
+    RETURNING id, create_date`;
+  
+  const values = [data.id, JSON.stringify(data.eventData), data.dataType, data.namespaceVersion];
+  const result = await client.query(query, values);
 
-    // Prepare the INSERT query with parameterized values for security
-    const query = `
-      INSERT INTO published_events 
-      (id, event, event_type, type_version) 
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, create_date`;
-    
-    const values = [data.id, JSON.stringify(data.eventData), data.dataType, data.namespaceVersion];
-    const result = await client.query(query, values);
-
-    return {
-      status: JSON.stringify({
-        message: 'Data saved successfully',
-        id: result.rows[0].id,
-        timestamp: result.rows[0].created_at
-      }),
-      id: result.rows[0].id
-    };
-
-  } catch (error) {
-    console.error('Database error:', error);
-    
-    // More specific error handling
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-
-  } finally {
-    if (client) {
-      await client.end();
-    }
-  }
+  return {
+    status: JSON.stringify({
+      message: '${data.namespace} data saved successfully',
+      id: result.rows[0].id,
+      timestamp: result.rows[0].created_at
+    }),
+    id: result.rows[0].id
+  };
 }

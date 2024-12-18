@@ -24,6 +24,7 @@ Metadata:
       - pOrg
       - pSystem
       - pImageTag
+      - pCreateAlarms
     - Label:
         default: Overall VPC Configuration
       Parameters:
@@ -302,6 +303,12 @@ Parameters:
     Description: IAM Permissions Boundary ARN (optional)
     Type: String
     Default: ''
+
+  pCreateAlarms:
+    Type: String
+    Default: 'False'
+    AllowedValues: ['True','False']
+    Description: Create CloudWatch Alarms
 
 Conditions:
 
@@ -1044,6 +1051,7 @@ Resources:
         HostedZoneId: !Ref HostedZone
         HostedZoneName: !Sub ${pEnv}.aws
         NotificationList: !Ref pNotificationList
+        pCreateAlarms: !Ref pCreateAlarms
 
   PublishedDataDatabase:
     Type: AWS::Serverless::Application
@@ -1082,6 +1090,7 @@ Resources:
         HostedZoneId: !Ref HostedZone
         HostedZoneName: !Sub ${pEnv}.aws
         NotificationList: !Ref pNotificationList
+        pCreateAlarms: !Ref pCreateAlarms
 
   AggregateFunction:
     Type: AWS::Serverless::Function
