@@ -1,0 +1,262 @@
+import * as crypto from 'crypto';
+import { SQSHandler, SQSEvent, SQSRecord, SQSBatchResponse } from 'aws-lambda';
+import { ComprehendClient, DetectPiiEntitiesCommand } from "@aws-sdk/client-comprehend";
+import { ensureEnvVar, createDbConnection } from './utils.ts';
+import { Client } from 'pg';
+
+// Initialize clients
+const comprehend = new ComprehendClient({});
+const encryptionKey = ensureEnvVar('EncryptionKey');
+
+// RDS settings
+const dbHost = ensureEnvVar('DBHost');
+const dbPort = ensureEnvVar('DBPort');
+const dbName = ensureEnvVar('DBName');
+const dbIamUser = ensureEnvVar('DBIamUser');
+const awsRegion = ensureEnvVar('AwsRegion');
+
+export const handler: SQSHandler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
+    const batchItemFailures: { itemIdentifier: string }[] = [];
+
+    try {
+        // Process the batch of messages from the event
+        const initialResults = await processBatch(event.Records);
+        
+        // Add failed messages to batchItemFailures
+        initialResults.forEach(result => {
+            if (!result.success) {
+                batchItemFailures.push({
+                    itemIdentifier: result.record.messageId
+                });
+            }
+        });
+
+    } catch (error) {
+        console.error('Error in handler:', error);
+        // In case of a critical error, fail all messages in the batch
+        event.Records.forEach(record => {
+            batchItemFailures.push({
+                itemIdentifier: record.messageId
+            });
+        });
+    }
+
+    return {
+        batchItemFailures
+    };
+};
+
+interface ProcessResult {
+    record: SQSRecord;
+    success: boolean;
+    error?: any;
+}
+
+async function processBatch(records: SQSRecord[]): Promise<ProcessResult[]> {
+    // Process messages in parallel and get all results
+    const processPromises = records.map(record => processMessage(record));
+    const results = await Promise.allSettled(processPromises);
+    
+    return results.map((result, index) => {
+        if (result.status === 'fulfilled') {
+            return result.value;
+        } else {
+            return {
+                record: records[index],
+                success: false,
+                error: result.reason
+            };
+        }
+    });
+}
+
+async function processMessage(record: SQSRecord): Promise<ProcessResult> {
+    try {
+        const anonymized = await anonymizeText(record.body);
+        console.log('Anonymized text:', anonymized);
+
+        // convert it to and back from JSON as a test
+        const anonymizedData: RawData = JSON.parse(anonymized); 
+        console.log('Successfully anonymized event:', JSON.stringify(anonymizedData,null,2));
+        const saveResult = await saveData(anonymizedData);
+        
+        return {
+            record,
+            success: true
+        };
+        
+    } catch (error) {
+        console.error('Error processing message:', error, record);
+        return {
+            record,
+            success: false,
+            error
+        };
+    }
+}
+
+async function anonymizeText(inputText: string): Promise<string> {
+    if (!inputText) {
+        throw new Error('No input text provided');
+    }
+
+    const command = new DetectPiiEntitiesCommand({
+        Text: inputText,
+        LanguageCode: 'en'
+    });
+
+    const detectPiiResult = await comprehend.send(command);
+
+    if (!detectPiiResult.Entities || detectPiiResult.Entities.length === 0) {
+        return inputText;
+    }
+
+    const sortedEntities = combineOverlappingEntities(detectPiiResult.Entities);
+
+    let processedText = inputText;
+    for (const entity of sortedEntities) {
+        if (entity.BeginOffset !== undefined && entity.EndOffset !== undefined) {
+            const pseudoValue = pseudonymizeData(processedText, {
+                Type: entity.Type ?? 'UNKNOWN',
+                Score: entity.Score ?? 0,
+                BeginOffset: entity.BeginOffset,
+                EndOffset: entity.EndOffset
+            });
+            processedText = 
+                processedText.slice(0, entity.BeginOffset) +
+                pseudoValue +
+                processedText.slice(entity.EndOffset);
+        }
+    }
+
+    return processedText;
+}
+
+interface PIIEntity {
+    Type: string;
+    Score: number;
+    BeginOffset: number;
+    EndOffset: number;
+}
+
+function combineOverlappingEntities(entities: any[]) {
+    if (entities.length === 0) return [];
+
+    // First sort by begin offset
+    const sortedEntities = [...entities].sort(
+        (a, b) => (a.BeginOffset ?? 0) - (b.BeginOffset ?? 0)
+    );
+
+    const combinedEntities = [];
+    let currentEntity = sortedEntities[0];
+
+    for (let i = 1; i < sortedEntities.length; i++) {
+        const nextEntity = sortedEntities[i];
+
+        // Check if entities overlap
+        if (nextEntity.BeginOffset <= currentEntity.EndOffset) {
+            // Combine the entities
+            currentEntity = {
+                ...currentEntity,
+                EndOffset: Math.max(currentEntity.EndOffset, nextEntity.EndOffset),
+                Score: Math.max(currentEntity.Score, nextEntity.Score),
+                Type: currentEntity.Type, // Keep the type of the first entity
+            };
+        } else {
+            // No overlap, add current entity to result and move to next
+            combinedEntities.push(currentEntity);
+            currentEntity = nextEntity;
+        }
+    }
+
+    // Don't forget to add the last entity
+    combinedEntities.push(currentEntity);
+
+    return combinedEntities;
+}
+
+const pseudonymizeData = (text: string, entity: PIIEntity): string => {
+    const originalValue = text.slice(entity.BeginOffset, entity.EndOffset);
+    
+    const hmac = crypto.createHmac('sha256', encryptionKey!);
+    hmac.update(`${entity.Type}:${originalValue}`);
+    const hash = hmac.digest('hex');
+    
+    switch (entity.Type) {
+        case 'PHONE':
+            return `+1${hash.substring(0, 10)}`;
+        case 'EMAIL':
+            return `${hash.substring(0, 8)}@pseudo.com`;
+        case 'SSN':
+            return `${hash.substring(0, 3)}-${hash.substring(3, 5)}-${hash.substring(5, 9)}`;
+        case 'CREDIT_DEBIT_NUMBER':
+            return `****-****-****-${hash.substring(0, 4)}`;
+        default:
+            return `PSEUDO-${hash.substring(0, 8)}`;
+    }
+};
+
+interface RawData {
+  id?: string;
+  dataType: string;
+  namespaceVersion: string;
+  eventData: string;
+}
+
+/**
+ * Saves data to the published_events table in the database.
+ * 
+ * @param {RawData} data - The data object to be stored
+ * @returns {Promise<Object>} A promise that resolves to an object containing:
+ *   - status: JSON string with message, id, and timestamp
+ * @throws {Error} If database operations fail
+ * 
+ * @example
+ * try {
+ *   const result = await saveData(
+ *     { key: 'value' },
+ *     'USER_EVENT',
+ *     '1.0'
+ *   );
+ *   console.log(result.status);
+ * } catch (error) {
+ *   console.error('Failed to save data:', error);
+ * }
+ */
+async function saveData(data: RawData): Promise<any> {
+  let client: Client | null = null;
+
+  try {
+    client = await createDbConnection(dbHost, dbPort, dbName, dbIamUser, awsRegion);
+
+    // Prepare the INSERT query with parameterized values for security
+    const query = `
+      INSERT INTO published_events 
+      (id, event, event_type, type_version) 
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, create_date`;
+    
+    const values = [data.id, JSON.stringify(data.eventData), data.dataType, data.namespaceVersion];
+    const result = await client.query(query, values);
+
+    return {
+      status: JSON.stringify({
+        message: 'Data saved successfully',
+        id: result.rows[0].id,
+        timestamp: result.rows[0].created_at
+      }),
+      id: result.rows[0].id
+    };
+
+  } catch (error) {
+    console.error('Database error:', error);
+    
+    // More specific error handling
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
+  } finally {
+    if (client) {
+      await client.end();
+    }
+  }
+}

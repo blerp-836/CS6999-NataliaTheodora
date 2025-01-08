@@ -1,25 +1,26 @@
 {
-  "name": "eduapi",
+  "name": "db-writer",
   "version": "1.0.0",
-  "description": "Function for consuming EduAPI data artifacts",
-  "main": "eduapi.js",
+  "description": "Function for saving data artifacts to the database",
+  "main": "db-writer.ts",
   "repository": "https://github.com/1EdTech/HEReferenceDataPipeline",
   "author": "1EdTech & Unicon",
   "license": "MIT",
+  "files": [
+    "db-writer.ts"
+  ],
+  "directories": {
+    "test": "tests"
+  },
   "scripts": {
     "unit": "jest",
     "lint": "eslint '*.ts' --quiet --fix",
     "compile": "tsc",
     "test": "jest"
   },
-  "files": [
-    "eduapi.js"
-  ],
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.687.0",
     "@aws-sdk/rds-signer": "^3.679.0",
-    "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1",
     "aws-sdk": "^2.1691.0",
     "esbuild": "^0.14.14",
     "pg": "^8.13.1"
@@ -29,7 +30,7 @@
     "@jest/globals": "^29.2.0",
     "@types/aws-lambda": "^8.10.92",
     "@types/jest": "^29.2.0",
-    "@types/node": "^20.5.7",
+    "@types/node": "^22.8.1",
     "@types/pg": "^8.11.10",
     "@typescript-eslint/eslint-plugin": "^5.10.2",
     "@typescript-eslint/parser": "^5.10.2",
@@ -39,10 +40,12 @@
     "jest": "^29.2.1",
     "prettier": "^2.5.1",
     "ts-jest": "^29.0.5",
-    "ts-node": "^10.9.1",
-    "typescript": "^4.8.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3",
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
     "babel-jest": "^29.7.0"
   }
 }
+
+

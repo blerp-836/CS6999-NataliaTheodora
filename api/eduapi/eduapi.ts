@@ -5,10 +5,23 @@ import fs from 'fs/promises';
 import Ajv2019 from "ajv/dist/2019";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
+let initialized = false;
+
 // SQS queue settings
-const awsRegion = ensureEnvVar('AwsRegion');
-const sqsClient = new SQSClient({ region: awsRegion });
-const SQSInjestQueueUrl = ensureEnvVar('SQSInjestQueueUrl');
+let awsRegion : string;
+let sqsClient : SQSClient;
+let SQSInjestQueueUrl : string;
+
+function initialize() {
+  if (!initialized || process.env['underTest'] === 'true') {
+    // SQS queue settings
+    awsRegion = ensureEnvVar('AwsRegion');
+    sqsClient = new SQSClient({ region: awsRegion });
+    SQSInjestQueueUrl = ensureEnvVar('SQSInjestQueueUrl');
+
+    initialized = true;
+  }
+}
 
 /**
  * Ensures that a required environment variable is set and returns its value.
@@ -25,7 +38,7 @@ const SQSInjestQueueUrl = ensureEnvVar('SQSInjestQueueUrl');
  *   console.error('Missing required environment variable:', error.message);
  * }
  */
-function ensureEnvVar(name: string): string {
+export function ensureEnvVar(name: string): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(`Environment variable ${name} is not set`);
@@ -44,6 +57,8 @@ function ensureEnvVar(name: string): string {
  */
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    initialize();
+
     try {
         // validate the body contains json data
         if (!event.body) {
@@ -127,7 +142,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
  * @returns {Promise<{ valid: boolean; errors: string[] | null }>} - A promise that resolves to an object indicating whether the JSON object is valid and any validation errors.
  */
 
-async function validateJsonWithSchema<T>(jsonObject: unknown, schemaPath: string): Promise<{ valid: boolean; errors: string[] | null }> {
+export async function validateJsonWithSchema<T>(jsonObject: unknown, schemaPath: string): Promise<{ valid: boolean; errors: string[] | null }> {
     try {
       // Read the schema file
       const schemaContent = await fs.readFile(schemaPath, 'utf-8');
@@ -179,7 +194,7 @@ interface RawData {
  *   console.error('Failed to send message to SQS:', error);
  * }
  */
- async function sendMessageToSQS(data: RawData): Promise<string | undefined> {
+export async function sendMessageToSQS(data: RawData): Promise<string | undefined> {
   try {
     const params = {
       QueueUrl: SQSInjestQueueUrl,

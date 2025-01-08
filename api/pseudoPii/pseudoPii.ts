@@ -1,17 +1,32 @@
 import * as crypto from 'crypto';
 import { SQSHandler, SQSEvent, SQSRecord, SQSBatchResponse } from 'aws-lambda';
-import { ensureEnvVar, createDbConnection } from './utils.ts';
+import { ensureEnvVar, createDbConnection } from './utils';
 import { Client } from 'pg';
 
+let initialized = false;
+
 // Initialize clients
-const encryptionKey = ensureEnvVar('EncryptionKey');
+let encryptionKey : string;
 
 // RDS settings
-const dbHost = ensureEnvVar('DBHost');
-const dbPort = ensureEnvVar('DBPort');
-const dbName = ensureEnvVar('DBName');
-const dbIamUser = ensureEnvVar('DBIamUser');
-const awsRegion = ensureEnvVar('AwsRegion');
+let dbHost : string;
+let dbPort : string;
+let dbName : string;
+let dbIamUser : string;
+let awsRegion : string;
+
+function initialize() {
+  if (!initialized || process.env['underTest'] === 'true') {
+        dbHost = ensureEnvVar('DBHost');
+        dbPort = ensureEnvVar('DBPort');
+        dbName = ensureEnvVar('DBName');
+        dbIamUser = ensureEnvVar('DBIamUser');
+        awsRegion = ensureEnvVar('AwsRegion');
+        encryptionKey = ensureEnvVar('EncryptionKey');
+
+        initialized = true;
+    }
+}
 
 /**
  * AWS Lambda handler function that processes SQS events containing data that needs PII anonymization
@@ -21,6 +36,7 @@ const awsRegion = ensureEnvVar('AwsRegion');
 export const handler: SQSHandler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
     const batchItemFailures: { itemIdentifier: string }[] = [];
 
+    initialize(); // for testing
     try {
         // Process the batch of messages from the event
         const initialResults = await processBatch(event.Records);
@@ -162,7 +178,7 @@ interface PIIEntity {
  * @param {string} text - Text to scan for PII
  * @returns {PiiData} Object containing matched PII data by type
  */
-function identifyPII(text : string) : PiiData {
+export function identifyPII(text : string) : PiiData {
   const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
   const phoneRegex = /(\+\d{1,2}\s?)?(\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}/g;
   const ssnRegex = /\b\d{3}-\d{2}-\d{4}\b/g;
@@ -184,7 +200,7 @@ function identifyPII(text : string) : PiiData {
  * @param {any} obj - Object to search for PII
  * @returns {void}
  */
-function findAndReplacePii(obj: any): void {
+export function findAndReplacePii(obj: any): void {
     // Handle arrays
     if (Array.isArray(obj)) {
         for (let item of obj) {
@@ -201,8 +217,8 @@ function findAndReplacePii(obj: any): void {
                 // loop through identified piiData and replace with anonymized text
                 for (let piiDatakey in piiData) {
                     let piiType = piiDatakey as keyof PiiData;
-                    if (piiData[piiType]) {
-                        for (let pii of piiData[piiType]) {
+                    if (piiData[piiType] && piiData[piiType] !== null) {
+                        for (let pii of piiData[piiType]!) {
                             obj[key] = obj[key].replace(
                                 pii, 
                                 pseudonymizeData(obj[key], { 
@@ -227,9 +243,9 @@ function findAndReplacePii(obj: any): void {
  * @param {PIIEntity} entity - Object containing PII type and position information
  * @returns {string} Pseudonymized version of the PII data
  */
-const pseudonymizeData = (text: string, entity: PIIEntity): string => {
+export const pseudonymizeData = (text: string, entity: PIIEntity): string => {
     const originalValue = text.slice(entity.BeginOffset, entity.EndOffset);
-    
+    initialize(); 
     const hmac = crypto.createHmac('sha256', encryptionKey!);
     hmac.update(`${entity.Type}:${originalValue}`);
     const hash = hmac.digest('hex');
