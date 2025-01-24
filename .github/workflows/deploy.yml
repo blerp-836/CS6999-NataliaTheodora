@@ -3,7 +3,7 @@ name: Deploy Reference Pipeline
 on:
   push:
     branches:
-      - main
+      - develop
 
 jobs:
   release:
