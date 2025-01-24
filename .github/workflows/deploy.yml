@@ -1,0 +1,34 @@
+name: Deploy Reference Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: self-hosted
+    timeout-minutes: 30
+    environment: dev
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com/
+
+      - name: Install npm global packages
+        run: |
+          npm install -g typescript
+          npm install -g esbuild
+
+      - name: Deploy Reference Pipeline
+        run: |
+          snap install yq
+          ./deploy.sh -s dev
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: 'us-east-1'
