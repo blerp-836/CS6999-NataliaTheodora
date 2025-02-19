@@ -75,6 +75,7 @@ export const handler: SQSHandler = async (event: SQSEvent): Promise<SQSBatchResp
 interface ProcessResult {
     record: SQSRecord;
     success: boolean;
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     error?: any;
 }
 
@@ -203,7 +204,7 @@ export function identifyPII(text : string) : PiiData {
 export function findAndReplacePii(obj: any): void {
     // Handle arrays
     if (Array.isArray(obj)) {
-        for (let item of obj) {
+        for (const item of obj) {
             findAndReplacePii(item);
         }
         return;
@@ -211,14 +212,14 @@ export function findAndReplacePii(obj: any): void {
 
     // Handle objects
     if (obj && typeof obj === 'object') {
-        for (let key in obj) {
+        for (const key in obj) {
             if (typeof obj[key] === 'string') {
                 const piiData = identifyPII(obj[key]);
                 // loop through identified piiData and replace with anonymized text
-                for (let piiDatakey in piiData) {
-                    let piiType = piiDatakey as keyof PiiData;
+                for (const piiDatakey in piiData) {
+                    const piiType = piiDatakey as keyof PiiData;
                     if (piiData[piiType] && piiData[piiType] !== null) {
-                        for (let pii of piiData[piiType]!) {
+                        for (const pii of piiData[piiType]!) {
                             obj[key] = obj[key].replace(
                                 pii, 
                                 pseudonymizeData(obj[key], { 

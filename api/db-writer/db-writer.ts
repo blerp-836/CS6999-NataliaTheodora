@@ -77,6 +77,7 @@ export const lambdaHandler: SQSHandler = async (event: SQSEvent): Promise<SQSBat
 export interface ProcessResult {
     record: SQSRecord;
     success: boolean;
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     error?: any;
 }
 
@@ -148,21 +149,6 @@ export async function processMessage(record: SQSRecord, client: Client): Promise
             error
         };
     }
-}
-
-/**
- * Structure containing identified PII data
- * @interface PiiData
- * @property {RegExpMatchArray | null} EMAIL - Matched email addresses
- * @property {RegExpMatchArray | null} PHONE - Matched phone numbers
- * @property {RegExpMatchArray | null} SSN - Matched social security numbers
- * @property {RegExpMatchArray | null} CREDIT_DEBIT_NUMBER - Matched credit card numbers
- */
-interface PiiData {
-    EMAIL: RegExpMatchArray | null;
-    PHONE: RegExpMatchArray | null;
-    SSN: RegExpMatchArray | null;
-    CREDIT_DEBIT_NUMBER: RegExpMatchArray | null;
 }
 
 /**

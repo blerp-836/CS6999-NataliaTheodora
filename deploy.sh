@@ -17,7 +17,6 @@ set -o pipefail
 main() {
   getOptions ${ARGS[*]}
   checkDependencies
-#  login
   buildDockerImages
   samBuild
   samDeploy
@@ -42,16 +41,6 @@ getOptions() {
       -s|--stack-file)
         export STACK_FILE=$2
         shift
-        ;;
-      --only-stack)
-        export ONLY_STACK=$2
-        shift
-        ;;
-      --only-docker)
-        export ONLY_DOCKER=1
-        ;;
-      --update-ecs)
-        export UPDATE_ECS=1
         ;;
       -h|--help)
         printUsage
@@ -92,11 +81,8 @@ This script creates or updates AWS resources
 
 usage: $0 -s stack-file [-h][-v]
   options:
-    -s, --stack-file            The stack file name prefix 
-                                  (ex. dev-networking or dev-services)
-    --only-stack                Target a single stack for deployment
-    --only-docker               Only build and push docker images
-    --update-ecs                Trigger a service update in all ECS services
+    -s, --stack-file            The stack file name prefix (minus .aws extension)
+                                  (ex. dev or qa)
     -v, --verbose               Enable debug output
     -h, --help                  prints this usage
 
@@ -110,16 +96,7 @@ checkDependencies() {
   which sam 2>&1 > /dev/null || die "This script requires AWS SAM installed (https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)"
 }
 
-login() {
-  printGreen "Login to AWS SSO"
-  source ./scripts/login.sh || die "You may need to edit $PWD/.aws/config and add the missing profile"
-}
-
 buildDockerImages() {
-  if [ ! -z ${ONLY_STACK-""} ]; then
-    return
-  fi
-
   ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
   for image in "${!DOCKER_IMAGES[@]}"; do 
     cd ${DOCKER_IMAGES[$image]}
@@ -138,12 +115,6 @@ buildDockerImages() {
     docker push $REGISTRY/$REPOSITORY:$DATE_TAG 
     cd -
   done
-  if [ ! -z ${ONLY_DOCKER-""} ]; then
-    if [ ! -z ${UPDATE_ECS-""} ]; then
-      updateEcs
-    fi
-    exit 0
-  fi
 }
 
 samBuild() {

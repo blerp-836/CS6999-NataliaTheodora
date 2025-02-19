@@ -6,6 +6,7 @@ import AjvDraft04 from 'ajv-draft-04';
 interface ValidationError {
   type: 'envelope' | 'event';
   index?: number;
+  /* eslint-disable  @typescript-eslint/no-explicit-any */
   errors: any[];
 }
 

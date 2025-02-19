@@ -99,7 +99,7 @@ async function getSecret(secretArn: string, awsRegion: string): Promise<SecretVa
 async function executeSqlStatements(client: Client, sqlStatements: { [key: string]: string }): Promise<void> {
   for (const [statementName, statement] of Object.entries(sqlStatements)) {
     logger.info(`Executing SQL statement: ${statementName}`);
-    var sql = statement.replace('{{IamUser}}', iamUser);
+    const sql = statement.replace('{{IamUser}}', iamUser);
     await client.query(sql);
   }
 }
@@ -129,9 +129,11 @@ async function executeSqlStatements(client: Client, sqlStatements: { [key: strin
  * 
  * @throws {Error} If database operations fail or unsupported RequestType is received
  */
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 export async function handler(event: any, context: any) {
   let client: Client | null = null;
   console.log(JSON.stringify(event));
+  console.debug(JSON.stringify(context));
 
   try {
     const responseData: { [key: string]: string } = {};

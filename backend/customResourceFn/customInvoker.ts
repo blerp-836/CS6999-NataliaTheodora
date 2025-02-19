@@ -15,7 +15,6 @@ export const handler = async (event: CloudFormationCustomResourceEvent, context:
 
   try {
     let responseData: any;
-    let status = 'SUCCESS';
 
     if (event.RequestType === 'Create' || event.RequestType === 'Update') {
       // Invoke the target Lambda function

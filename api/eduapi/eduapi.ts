@@ -89,6 +89,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         try {
             await fs.access(schemaFile);
         } catch (err) {
+            console.error('Schema file not found: ', schemaFile);
+            console.error(err);
             return {
                 statusCode: 400,
                 body: JSON.stringify({
@@ -99,7 +101,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         
         // Validate the JSON object against the schema
         console.log('validating data for dataType: ', dataType);
-        var data = JSON.parse(event.body);
+        const data = JSON.parse(event.body);
         const { valid, errors } = await validateJsonWithSchema(data, schemaFile);
         if (!valid) {
             return {

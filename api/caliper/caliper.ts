@@ -51,9 +51,9 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
 
         // Validate the JSON object against the schema
-        var data = JSON.parse(event.body);
-        var namespaceVersion;
-        var validationErrors;
+        const data = JSON.parse(event.body);
+        let namespaceVersion;
+        let validationErrors;
         if (data.dataVersion.includes('v1p1')) {
             console.log('Caliper version is v1p1');
             namespaceVersion = 'v1p1';
@@ -88,6 +88,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
 
         // loop through the data and save each event to the database
         for (const [index, event] of data.data.entries()) {
+          console.debug(`Processing event ${index + 1} of ${data.data.length}`);
           const dataType = event.type;
 
           // put the id and data on the SQS queue to be anonymized later
