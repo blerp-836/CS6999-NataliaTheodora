@@ -136,12 +136,8 @@ See package.json
 ```bash
 npm run compile
 ```
-TODO: document building as part of the larger API
 
 #### Testing
 ```bash
 npm test
 ```
-TODO: create tests
-
-

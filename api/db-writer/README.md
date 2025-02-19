@@ -100,6 +100,8 @@ Common issues and solutions:
      - Verify the Lambda function has permission to send messages to the anonymization queue
      - Review CloudWatch logs for any errors related to SQS message sending
 
+**Note** that all of the issues described above should result in alarm notifications due to SQS queue sizes growing beyond thresholds. 
+
 For further debugging:
 - Enable debug logging by setting the `LOG_LEVEL` environment variable to `DEBUG`
 - Review CloudWatch logs for detailed execution information

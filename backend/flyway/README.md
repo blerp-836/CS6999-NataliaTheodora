@@ -29,11 +29,7 @@ docker build -t flyway-aws .
 
 ### Running Migrations
 
-The image is configured to execute migrations using an entry script. The container will automatically run the Flyway migrate command when started.
-
-```bash
-docker run flyway-aws
-```
+Flyway runs automatically during deployments. You should not need to run it manually. There are more details [backend](../README.md) documentation.
 
 ## Configuration
 
