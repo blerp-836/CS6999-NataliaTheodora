@@ -1,7 +1,7 @@
 import { jest, describe, beforeEach, afterEach, it, expect } from '@jest/globals'
 import { SQSEvent, SQSRecord, Context } from 'aws-lambda';
 import { SQSClient } from "@aws-sdk/client-sqs";
-import { lambdaHandler, processMessage, saveData } from '../db-writer';
+import { lambdaHandler, processMessage, saveData, anonymizeEvent, RawData } from '../db-writer';
 import { createDbConnection } from '../utils';
 
 // Mock the dependencies
@@ -204,30 +204,39 @@ describe('DB Writer Lambda', () => {
 
     describe('saveData', () => {
         it('should successfully save data to database', async () => {
-            const mockClient = {
-                query: jest.fn().mockReturnValue({
-                    rows: [{ id: '123', created_at: new Date() }]
-                })
-            };
-            (createDbConnection as jest.Mock).mockImplementation(() => mockClient);
+          const mockClient = {
+            query: jest.fn().mockReturnValue({
+              rows: [{ id: '123', created_at: new Date() }]
+            })
+          };
+          (createDbConnection as jest.Mock).mockImplementation(() => mockClient);
+      
+          const testData = {
+            id: '',
+            dataType: 'TEST',
+            namespace: 'test',
+            namespaceVersion: '1.0',
+            eventData: '{"test": "data"}' // Already a JSON string
+          };
+      
+          const result = await saveData(testData, mockClient as any);
 
-            const testData = {
-                id: '',
-                dataType: 'TEST',
-                namespace: 'test',
-                namespaceVersion: '1.0',
-                eventData: '{"test": "data"}'
-            };
-
-            const result = await saveData(testData, mockClient as any);
-
-            expect(result.id).toBe('123');
-            expect(mockClient.query).toHaveBeenCalledWith(
-                expect.any(String),
-                [JSON.stringify(testData.eventData), testData.dataType, testData.namespaceVersion]
-            );
+      
+          expect(result.id).toBe('123');
+          expect(mockClient.query).toHaveBeenCalledWith(
+            `
+INSERT INTO test_raw_events 
+(event, event_type, type_version) 
+VALUES ($1, $2, $3)
+RETURNING id, create_date`,
+            [
+                '{"test": "data"}',
+                testData.dataType,
+                testData.namespaceVersion
+            ]
+          );
         });
-
+      
         it('should handle database errors', async () => {
             const mockClient = {
                 query: jest.fn().mockImplementationOnce( () => Promise.reject(new Error('DB Error')) )
@@ -245,4 +254,68 @@ describe('DB Writer Lambda', () => {
             await expect(saveData(testData, mockClient as any)).rejects.toThrow('DB Error');
         });
     });
+
+    describe('saveData with anonymization', () => {
+        it('should save data with anonymized actor and original actor in extensions', async () => {
+          const mockClient = {
+            query: jest.fn().mockReturnValue({
+              rows: [{ id: '456', created_at: new Date() }]
+            })
+          };
+          (createDbConnection as jest.Mock).mockImplementation(() => mockClient);
+      
+          // Sample Caliper event data with an actor
+          const testEventData = {
+            actor: {
+              id: 'http://example.org/users/jdoe',
+              type: 'Person',
+              name: 'John Doe',
+              email: 'jdoe@example.org'
+            },
+            action: 'Started',
+            object: { id: 'http://example.org/assessments/123' },
+            eventTime: '2025-02-22T10:00:00Z'
+          };
+      
+          const testData: RawData = {
+            id: '',
+            dataType: 'CALIPER_EVENT',
+            namespace: 'learning',
+            namespaceVersion: '1.1',
+            eventData: JSON.stringify(testEventData) // Stringified as it comes from SQS
+          };
+      
+          // Simulate the anonymization step from processMessage
+          const parsedEventData = JSON.parse(testData.eventData);
+          const anonymizedEventData = anonymizeEvent(parsedEventData);
+          testData.eventData = JSON.stringify(anonymizedEventData);
+      
+          const result = await saveData(testData, mockClient as any);
+      
+          expect(result.id).toBe('456');
+          expect(mockClient.query).toHaveBeenCalledWith(
+            `
+INSERT INTO learning_raw_events 
+(event, event_type, type_version) 
+VALUES ($1, $2, $3)
+RETURNING id, create_date`,
+            [
+              expect.stringContaining('"actor":{"id":"'), // Check actor ID is hashed
+              'CALIPER_EVENT',
+              '1.1'
+            ]
+          );
+          
+      
+          // Parse the query argument to verify extensions
+          const queryArgs = mockClient.query.mock.calls[0][1];
+          const savedEventData = JSON.parse((queryArgs as [string, string, string])[0]);
+          expect(savedEventData.actor.id).not.toBe('http://example.org/users/jdoe'); // ID is hashed
+          expect(savedEventData.actor.name).toBeUndefined(); // PII removed
+          expect(savedEventData.actor.email).toBeUndefined(); // PII removed
+          expect(savedEventData.extensions.originalActor).toEqual(testEventData.actor); // Original actor preserved
+
+          console.log('savedEventData:', savedEventData);
+        });
+      });
 });
