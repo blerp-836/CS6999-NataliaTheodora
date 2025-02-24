@@ -122,8 +122,8 @@ samBuild() {
 }
 
 samDeploy() {
-  CONFIG_VARS=$(cat samconfig.yaml | yq ".${SAM_CONFIG_ENV}.deploy.parameters.parameter_overrides")
-  sam deploy --config-env $SAM_CONFIG_ENV --parameter-overrides $CONFIG_VARS pImageTag=$DATE_TAG
+  CONFIG_VARS=$(cat samconfig.yaml | yq ".${SAM_CONFIG_ENV}.deploy.parameters.parameter_overrides" | tr -d '"')
+  sam deploy --config-env $SAM_CONFIG_ENV --parameter-overrides "$CONFIG_VARS pImageTag=$DATE_TAG"
 }
 
 main

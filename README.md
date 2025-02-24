@@ -78,13 +78,15 @@ Prerequisites:
    git clone https://github.com/1EdTech/HEReferenceDataPipeline.git
    cd HEReferenceDataPipeline
    ```
-1. If an environment stack file does not already exist for the environment, create one
-    * refer to [dev.aws](./dev.aws) and [qa.aws](./qa.aws) for examples
-    * the file name should follow the format `<env>.aws`
-    * place the file in the project root directory
-1. Update or create the samconfig.yaml file, as necessary, for the environment
-    * `default` (aka "dev") and `qa` configurations already exist
-1. Update the `template.yaml` Mappings section with an new EnvMap entry for the new environment
+1. Configure the environment
+   * See [Configuration](#configuration)
+   * If an environment stack file does not already exist for the environment, create one
+     - refer to [dev.aws](./dev.aws) and [qa.aws](./qa.aws) for examples
+     - the file name should follow the format `<env>.aws`
+     - place the file in the project root directory
+   * Update or create the samconfig.yaml file, as necessary, for the environment
+     - `default` (aka "dev") and `qa` configurations already exist
+   * Update the `template.yaml` Mappings section with an new EnvMap entry for the new environment
 1. Run the test.sh script found in the top-level directory
     * Verify you get the following lines of output
     ```
@@ -105,6 +107,7 @@ Prerequisites:
         * the script will instruct you to install additional dependencies, if you don't already have them
         * this will create or update the specified environment's pipeline
         * *Note* You may also pass the -v option in order to debug the script's execution
+        * *Note* If you created a new enviornment configuration set, and the stacks fail to create on the first attempt, you may need to manually remove the failed stack in the AWS CloudFormation console
 1. When deployment is complete, the outputs section of the script output will contain the API Gateway URL
     * You can also obtain this information via the AWS CloudFormation console
 1. You will need to obtain the Cognito client ids and secrets
@@ -122,6 +125,9 @@ Key environment configuration in samconfig.yaml:
 - `s3_prefix`: The S3 bucket AWS SAM uses for staging artifacts for install
 - `tags`: The list of tags and values to assign to created resources
 - `parameter_overrides`: Env-specific parameter overrides passed onto the SAM templates
+    - pEnv: a short string representing the environment name (e.g. "dev", "qa", and "prod")
+        - **Note** You cannot install 2 identitically named environments in a single AWS account
+    - pEncryptionKey: the 16-char encryption key used for pseudo-anonymization
 
 Key environment configuration in the environment stack file (e.g. dev.aws):
 - `SSO_ACCOUNT_NAME`: This should always be set to 'na'
@@ -130,9 +136,40 @@ Key environment configuration in the environment stack file (e.g. dev.aws):
 - `DOCKER_IMAGES`: The docker image name
     - for the flyway image, the name should follow the format `<env>-aloe-flyway`
 
-#### Restore Snapshot
+Key environment configuration in the template.yaml file 
+- The mappings section contains key parameters for a given environment
+- If you wish to create a new environment start with a copy of the `dev` mapping 
+- `pVpcName`: The name that the `backend` template will assign the created VPC
+- `pOrg`: A short string representing the developer group/team name
+- `pNumAzs`: The number of availability zones to create in the VPC
+- `pCreateNatGateway`: Creates a NAT gateway for the VPC.  Until AWS API endpoints fully supports IPv6, this needs to be true.
+- `pCreateSingleNatGateway`: In non-prod environments, save a little money by setting this to true.
+- `pCidr`: The CIDR address of the VPC.  Consider your other VPCs and your organizations other network addresses when setting this value.
+- `pTier1Subnet1Cidr`: The CIDR block for the public subnet in the first availability zone.
+- `pTier1Subnet2Cidr`: The CIDR block for the public subnet in the second availability zone.
+- `pTier2Subnet1Cidr`: The CIDR block for the private subnet in the first availability zone.
+- `pTier2Subnet2Cidr`: The CIDR block for the private subnet in the second availability zone.
+- `pCreateAlarms`: Set to 'True' if you want alarms created and an SNS topic notified
+- `pNotificationList`: A comma-separated list of email addresses for the SNS alarm topic
 
-TODO
+#### Create from Snapshot
+
+The databases in an environment stack can be created from corresponding snapshots of the sensitive and published databases in another environment. To create a new environment using database snapshots:
+    * obtain the sensitive and published snapshot names
+    * edit `samconfig.yaml`
+    * edit the `parameter_overrides` for the target environment
+      * add `pPublishedDbSnapshotId=<name> pSensitiveDbSnapshotId=<name>` to the list of overrides
+      * be sure to substitute the snapshot names for `<name>`
+    * follow the steps in [Build and Deploy](#build-and-deploy)
+
+#### Override the DB size
+
+* edit `samconfig.yaml`
+* edit the `parameter_overrides` for the target environment
+  * add `pPublishedDbInstanceClass=<size> pSensitiveDbInstanceClass=<size>` to the list of overrides
+  * be sure to substitute the appropriate size for `<size>`
+  * find the list of allowed instance classes in the `DBInstanceClass` parameter in the [DB template](./backend/aurora-postgres.yaml)
+* follow the steps in [Build and Deploy](#build-and-deploy)
 
 ### Testing & Quality
 
@@ -155,10 +192,6 @@ Run linting:
 #### Postman
 
 Postman is an API developer tool used by millions of developers to build and test APIs. We have a workspace created with a set of pre-configured API requests suitable for basic testing of a deployed pipeline's API. You will need to [signup](https://identity.getpostman.com/signup) for a Postman account.  Then, please contact project owners in order to receive an invite to the team workspace.
-
-### Troubleshooting
-
-TODO? this might be covered already
 
 ### Stack Update Failures
 
@@ -231,3 +264,11 @@ The infrastructure is defined using AWS SAM templates (AWS CloudFormation). Key 
 
 - Cognito:
   - Secures the API Gateway interface with machine-to-machine authentication
+
+## Cost Management
+
+By a large margin, the most expensive resources in this infrastructure are the two RDS instances.  By default each RDS instance size will be db.t4g.medium, which provides a reasonable balance between cost and performance for small installations. Monitor your database performance (see [Monitoring](./backend/README.md#performance-optimization)), and increase the instance size as necessary (see [])
+
+## Tear Down/Cleanup
+
+* See [Backend Cleanup](./backend/README.md#removalcleanup)

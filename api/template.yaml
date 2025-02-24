@@ -184,7 +184,7 @@ Resources:
   SQSInjestQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: sqs-injest-queue
+      QueueName: !Sub ${pEnv}-sqs-injest-queue
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt SQSInjestDLQ.Arn
         maxReceiveCount: 5
@@ -192,7 +192,7 @@ Resources:
   SQSInjestDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: sqs-injest-dlq
+      QueueName: !Sub ${pEnv}-sqs-injest-dlq
       MessageRetentionPeriod: 345600  # 4 days
 
   SQSInjestEventSource:
@@ -267,7 +267,7 @@ Resources:
   AnonymizeSQSQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: anonymize-sqs-queue
+      QueueName: !Sub ${pEnv}-anonymize-sqs-queue
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt AnonymizeSQSDLQ.Arn
         maxReceiveCount: 5
@@ -275,7 +275,7 @@ Resources:
   AnonymizeSQSDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: anonymize-sqs-dlq
+      QueueName: !Sub ${pEnv}-anonymize-sqs-dlq
       MessageRetentionPeriod: 345600  # 4 days
 
   AnonymizeSQSEventSource:
@@ -357,7 +357,7 @@ Resources:
       Namespace: AWS/SQS
       Dimensions:
         - Name: QueueName
-          Value: sqs-injest-queue
+          Value: !Sub ${pEnv}-sqs-injest-queue
       Statistic: Maximum
       Period: 300
       EvaluationPeriods: 1
@@ -379,7 +379,7 @@ Resources:
       Namespace: AWS/SQS
       Dimensions:
         - Name: QueueName
-          Value: anonymize-sqs-queue
+          Value: !Sub ${pEnv}-anonymize-sqs-queue
       Statistic: Maximum
       Period: 300
       EvaluationPeriods: 1
@@ -402,7 +402,7 @@ Resources:
       Namespace: AWS/SQS
       Dimensions:
         - Name: QueueName
-          Value: sqs-injest-queue
+          Value: !Sub ${pEnv}-sqs-injest-queue
       Statistic: Average
       Period: 300
       EvaluationPeriods: 1
@@ -424,7 +424,7 @@ Resources:
       Namespace: AWS/SQS
       Dimensions:
         - Name: QueueName
-          Value: anonymize-sqs-queue
+          Value: !Sub ${pEnv}-anonymize-sqs-queue
       Statistic: Average
       Period: 300
       EvaluationPeriods: 1
@@ -447,7 +447,7 @@ Resources:
       Namespace: AWS/SQS
       Dimensions:
         - Name: QueueName
-          Value: sqs-injest-dlq
+          Value: !Sub ${pEnv}-sqs-injest-dlq
       Statistic: Average
       Period: 300
       EvaluationPeriods: 1
@@ -469,7 +469,7 @@ Resources:
       Namespace: AWS/SQS
       Dimensions:
         - Name: QueueName
-          Value: anonymize-sqs-dlq
+          Value: !Sub ${pEnv}-anonymize-sqs-dlq
       Statistic: Average
       Period: 300
       EvaluationPeriods: 1

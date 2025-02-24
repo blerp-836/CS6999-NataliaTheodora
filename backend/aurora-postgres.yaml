@@ -19,8 +19,8 @@ Parameters:
     Description: The type of data this DB will host
     Type: String
     AllowedValues:
-      - sensitive
-      - published
+      - sensitiveDb
+      - publishedDb
 
   DBName:
     Description: Database Name
@@ -358,7 +358,7 @@ Resources:
       Engine: aurora-postgresql
       EngineVersion: !Ref DBEngineVersion
       AutoMinorVersionUpgrade: true
-      DatabaseName: !If [IsUseDBSnapshot, !Ref AWS::NoValue, !Ref DBName]
+      DatabaseName: !If [IsUseDBSnapshot, !Ref AWS::NoValue, !Ref DBType]
       Port: !Ref DBPort
       MasterUsername: !If [IsUseDBSnapshot, !Ref AWS::NoValue, !Ref DBUsername]
       ManageMasterUserPassword: true
@@ -711,7 +711,7 @@ Resources:
           MasterUserSecretArn: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
           DBHost: !Ref DnsRecord
           DBPort: !GetAtt AuroraDBCluster.Endpoint.Port
-          DBName: !Ref DBName
+          DBName: !Ref DBType
           DbType: !Ref DBType
           IamUser: !Ref IamUser
           AwsRegion: !Ref AWS::Region
@@ -790,10 +790,10 @@ Resources:
       Environment:
         Variables:
           MASTER_SECRET_ARN: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
-          FLYWAY_URL: !Sub "jdbc:postgresql://${DnsRecord}:${AuroraDBCluster.Endpoint.Port}/${DBName}"
+          FLYWAY_URL: !Sub "jdbc:postgresql://${DnsRecord}:${AuroraDBCluster.Endpoint.Port}/${DBType}"
           FLYWAY_LOCATIONS: !Sub "filesystem:/flyway/sql/${DBType}"
           FLYWAY_PLACEHOLDERS_DATABASE_SCHEMA:  public
-          FLYWAY_PLACEHOLDERS_DATABASE_NAME: !Ref DBName
+          FLYWAY_PLACEHOLDERS_DATABASE_NAME: !Ref DBType
           FLYWAY_PLACEHOLDERS_ENDPOINT:  !Ref DnsRecord
           FLYWAY_PLACEHOLDERS_PORT: !GetAtt AuroraDBCluster.Endpoint.Port
           FLYWAY_PLACEHOLDERS_REP_USER: !Ref DBUsername
@@ -866,7 +866,7 @@ Outputs:
     Value: !Ref DBUsername
   DBName:
     Description: Database Name
-    Value: !Ref DBName
+    Value: !Ref DBType
   IamUser:
     Description: IAM Database User
     Value: !Ref IamUser

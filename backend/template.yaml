@@ -59,6 +59,13 @@ Metadata:
       - pTier3Subnet2Cidr
       - pTier3Subnet3Cidr
     - Label:
+        default: Database Parameters
+      Parameters:    
+      - pPublishedDbInstanceClass
+      - pSensitiveDbInstanceClass
+      - pPublishedDbSnapshotId
+      - pSensitiveDbSnapshotId
+    - Label:
         default: Additional Parameters
       Parameters:    
       - pNotificationList
@@ -310,6 +317,17 @@ Parameters:
     AllowedValues: ['True','False']
     Description: Create CloudWatch Alarms
 
+  pPublishedDbInstanceClass:
+    Type: String
+    Description: Database Instance Class
+  pSensitiveDbInstanceClass:
+    Type: String
+    Description: Database Instance Class
+  pPublishedDbSnapshotId:
+    Type: String
+  pSensitiveDbSnapshotId:
+    Type: String
+
 Conditions:
 
   cCreateInternetGatewaySubnet1: !Equals [ !Ref pCreateInternetGateway, true ]
@@ -397,6 +415,7 @@ Resources:
 
   rVpcFlowLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
     Properties:
       LogGroupName: !Sub /${pSystem}/${pVpcName}/flowlogs
       RetentionInDays: 1
@@ -463,6 +482,7 @@ Resources:
   rTier1Subnet1:
     Type: AWS::EC2::Subnet
     Condition: cCreateTier1Subnet1
+    DependsOn: rVpcCidrBlockIpv6
     Properties:
       AvailabilityZone: !Select
                     - 0
@@ -491,6 +511,7 @@ Resources:
   rTier1Subnet3:
     Type: AWS::EC2::Subnet
     Condition: cCreateTier1Subnet3
+    DependsOn: rVpcCidrBlockIpv6
     Properties:
       AvailabilityZone: !Select
                     - 2
@@ -661,6 +682,7 @@ Resources:
   rTier2Subnet1:
     Type: AWS::EC2::Subnet
     Condition: cCreateTier2Subnet1
+    DependsOn: rVpcCidrBlockIpv6
     Properties:
       AvailabilityZone: !Select
                     - 0
@@ -675,6 +697,7 @@ Resources:
   rTier2Subnet2:
     Type: AWS::EC2::Subnet
     Condition: cCreateTier2Subnet2
+    DependsOn: rVpcCidrBlockIpv6
     Properties:
       AvailabilityZone: !Select
                     - 1
@@ -689,6 +712,7 @@ Resources:
   rTier2Subnet3:
     Type: AWS::EC2::Subnet
     Condition: cCreateTier2Subnet3
+    DependsOn: rVpcCidrBlockIpv6
     Properties:
       AvailabilityZone: !Select
                     - 2
@@ -821,6 +845,7 @@ Resources:
   rTier3Subnet1:
     Type: AWS::EC2::Subnet
     Condition: cCreateTier3Subnet1
+    DependsOn: rVpcCidrBlockIpv6
     Properties:
       AvailabilityZone: !Select
                     - 0
@@ -835,6 +860,7 @@ Resources:
   rTier3Subnet2:
     Type: AWS::EC2::Subnet
     Condition: cCreateTier3Subnet2
+    DependsOn: rVpcCidrBlockIpv6
     Properties:
       AvailabilityZone: !Select
                     - 1
@@ -849,6 +875,7 @@ Resources:
   rTier3Subnet3:
     Type: AWS::EC2::Subnet
     Condition: cCreateTier3Subnet3
+    DependsOn: rVpcCidrBlockIpv6
     Properties:
       AvailabilityZone: !Select
                     - 2
@@ -1022,12 +1049,12 @@ Resources:
         pEnv: !Ref pEnv
         pImageTag: !Ref pImageTag
         DBName: !Sub ${pEnv}AiAloeSensitiveDb
-        DBType: sensitive
+        DBType: sensitiveDb
         IamUser: aloesens
         DBPort: 5432
         DBUsername: aloeadmin
         DBEngineVersion: 16.1
-        DBInstanceClass: db.t4g.medium
+        DBInstanceClass: !Ref pSensitiveDbInstanceClass
         EnvironmentStage: !Ref pEnv
         Application: AI ALOE
         Confidentiality: pii/phi
@@ -1052,6 +1079,7 @@ Resources:
         HostedZoneName: !Sub ${pEnv}.aws
         NotificationList: !Ref pNotificationList
         pCreateAlarms: !Ref pCreateAlarms
+        DBSnapshotName: !Ref pSensitiveDbSnapshotId
 
   PublishedDataDatabase:
     Type: AWS::Serverless::Application
@@ -1061,12 +1089,12 @@ Resources:
         pEnv: !Ref pEnv
         pImageTag: !Ref pImageTag
         DBName: !Sub ${pEnv}AiAloePublishedDb
-        DBType: published
-        IamUser: aloesens
+        DBType: publishedDb
+        IamUser: aloepub
         DBPort: 5432
         DBUsername: aloeadmin
         DBEngineVersion: 16.1
-        DBInstanceClass: db.t4g.medium
+        DBInstanceClass: !Ref pPublishedDbInstanceClass
         EnvironmentStage: !Ref pEnv
         Application: AI ALOE
         Confidentiality: public
@@ -1091,6 +1119,7 @@ Resources:
         HostedZoneName: !Sub ${pEnv}.aws
         NotificationList: !Ref pNotificationList
         pCreateAlarms: !Ref pCreateAlarms
+        DBSnapshotName: !Ref pPublishedDbSnapshotId
 
   AggregateFunction:
     Type: AWS::Serverless::Function
@@ -1157,7 +1186,7 @@ Resources:
   AggregateScheduleRule:
     Type: AWS::Scheduler::Schedule
     Properties:
-      Name: aggregate-function-schedule
+      Name: !Sub aggregate-function-schedule-${pEnv}
       FlexibleTimeWindow:
         Mode: 'OFF'
       ScheduleExpression: "cron(0 * * * ? *)" # Runs every hour

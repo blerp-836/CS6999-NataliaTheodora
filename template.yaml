@@ -12,6 +12,18 @@ Parameters:
     Type: String
   pImageTag:
     Type: String
+  pPublishedDbInstanceClass:
+    Type: String
+    Default: 'db.t4g.medium'
+  pSensitiveDbInstanceClass:
+    Type: String
+    Default: 'db.t4g.medium'
+  pPublishedDbSnapshotId:
+    Type: String
+    Default: ''
+  pSensitiveDbSnapshotId:
+    Type: String
+    Default: ''
 
 Mappings:
   EnvMap:
@@ -26,7 +38,7 @@ Mappings:
       pTier1Subnet2Cidr: 10.1.1.0/24
       pTier2Subnet1Cidr: 10.1.2.0/24
       pTier2Subnet2Cidr: 10.1.3.0/24
-      pNotificationList: abragg@unicon.net
+      pNotificationList: 'nobody@example.com'
       pCreateAlarms: 'True'
     qa:
       pVpcName: qa-ai-aloe-vpc
@@ -39,7 +51,20 @@ Mappings:
       pTier1Subnet2Cidr: 10.2.1.0/24
       pTier2Subnet1Cidr: 10.2.2.0/24
       pTier2Subnet2Cidr: 10.2.3.0/24
-      pNotificationList: tcouper@1edtech.org
+      pNotificationList: 'nobody@example.com'
+      pCreateAlarms: 'True'
+    prod:
+      pVpcName: prod-ai-aloe-vpc
+      pOrg: ai-aloe-prod
+      pNumAzs: 2
+      pCreateNatGateway: true
+      pCreateSingleNatGateway: true
+      pCidr: 10.3.0.0/20
+      pTier1Subnet1Cidr: 10.3.0.0/24
+      pTier1Subnet2Cidr: 10.3.1.0/24
+      pTier2Subnet1Cidr: 10.3.2.0/24
+      pTier2Subnet2Cidr: 10.3.3.0/24
+      pNotificationList: 'nobody@example.com'
       pCreateAlarms: 'True'
 
 Resources:
@@ -92,6 +117,10 @@ Resources:
           pNotificationList: !FindInMap [EnvMap, !Ref pEnv, pNotificationList]
           pImageTag: !Ref pImageTag
           pCreateAlarms: !FindInMap [EnvMap, !Ref pEnv, pCreateAlarms]
+          pPublishedDbInstanceClass: !Ref pPublishedDbInstanceClass
+          pSensitiveDbInstanceClass: !Ref pSensitiveDbInstanceClass
+          pPublishedDbSnapshotId: !Ref pPublishedDbSnapshotId
+          pSensitiveDbSnapshotId: !Ref pSensitiveDbSnapshotId
 
 Outputs:
 
