@@ -3,13 +3,20 @@ name: Deploy Reference Pipeline
 on:
   push:
     branches:
-      - develop
+      - prod
+      - qa
 
 jobs:
   deploy-pipeline-aws:
     runs-on: self-hosted
-    timeout-minutes: 30
-    environment: dev
+    timeout-minutes: 90
     steps:
+      - name: 'Cleanup build folder'
+        run: |
+          docker system prune -a -f
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
       - uses: actions/checkout@v2
-      - run: ./deploy.sh -s dev
+      - run: ./deploy.sh -s ${{ github.ref_name }}

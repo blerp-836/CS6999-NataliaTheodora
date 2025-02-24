@@ -70,7 +70,7 @@ qa:
       disable_rollback: false
       s3_prefix: reference-data-pipeline-qa
       tags: env=qa name=reference-data-pipeline-qa
-      parameter_overrides: "pEnv=qa pEncryptionKey=123456789ABCDEFG pPublishedDbSnapshotId=devaialoepublisheddb-cluster-20feb2025 pSensitiveDbSnapshotId=devaialoesensitivedb-cluster-20feb2025"
+      parameter_overrides: "pEnv=qa pEncryptionKey=123456789ABCDEFG"
 
   sync:
     parameters:
