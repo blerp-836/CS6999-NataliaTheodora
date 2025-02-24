@@ -24,12 +24,16 @@ HEReferenceDataPipeline/
     │   ├── eduapi.ts
     │   └── tests/
     │       └── eduapi.test.ts
-    └── json-schema/
-        ├── caliper/
-        │   ├── v1_1/
-        │   └── v1_2/
-        └── eduapi/
-            └── v1p0/
+    ├── json-schema/
+    |   ├── caliper/
+    |   │   ├── v1_1/
+    |   │   └── v1_2/
+    |   └── eduapi/
+    |       └── v1p0/
+    └── pseduoPii/
+        ├── pseduoPii.ts
+        └── tests/
+            └── pseduoPii.test.ts
 ```
 
 Key Files:
@@ -37,6 +41,13 @@ Key Files:
 - `api/caliper/CaliperValidator.ts`: Validator for Caliper events
 - `api/db-writer/db-writer.ts`: Database writer for processed events
 - `api/eduapi/eduapi.ts`: API for educational data integration
+- `api/pseudoPii/pseudoPii.ts`: Function for pseudo-anonymizing PII data
+
+Key API Components:
+- [Caliper Injest Function](./caliper/README.md)
+- [EduAPI Injest Function](./eduapi/README.md)
+- [DB Event Writer Function](./db-writer/README.md)
+- [Pseudo-Anonymize Function](./pseudoPii/README.md)
 
 ## Data Flow
 

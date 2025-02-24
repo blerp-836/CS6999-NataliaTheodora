@@ -49,6 +49,12 @@ HEReferenceDataPipeline/
 - Amazon SQS for message queuing between processing steps.
 - AWS Secrets Manager for secure credential management.
 
+### Key Project Components:
+
+- [Auth](./cognito/README.md): project files found in the `./cognito` directory
+- [API](./api/README.md): project files found in the `./api` directory
+- [Backend](./backend/README.md): project files found in the `./backend` directory
+
 ## Usage Instructions
 
 ### Installation
