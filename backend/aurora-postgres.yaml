@@ -15,6 +15,10 @@ Parameters:
     Description: The Docker Lambda-Function Image Tag
     Type: String
 
+  pPublicSubnet:
+    Description: The public subnet of the vpc
+    Type: String
+
   DBType:
     Description: The type of data this DB will host
     Type: String
@@ -281,7 +285,42 @@ Resources:
       Subscription:
       - Endpoint: !Ref NotificationList
         Protocol: email
-        
+
+  DbBastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${pEnv}-${DBType}-bastion-sg'
+      GroupDescription:
+        !Sub 'Security group for ${pEnv}-${DBType} bastion host'
+      VpcId: !Ref VPC
+  DbBastionAllowInboundSSHFromInternet:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DbBastionSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: 0.0.0.0/0
+  DbBastionInstanceKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub ${pEnv}-${DBType}-ssh-key-pair
+  DbBastionInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-04b4f1a9cf54c11d0
+      KeyName: !Sub ${pEnv}-${DBType}-ssh-key-pair
+      InstanceType: t2.micro
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+            - !Ref DbBastionSecurityGroup
+          SubnetId: !Ref pPublicSubnet
+      Tags:
+        - Key: Name
+          Value: !Sub '${pEnv}-${DBType}-bastion'
+
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
@@ -301,7 +340,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-AuroraClusterSecurityGroup
-        
+
   ClusterSecurityGroupIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
@@ -309,7 +348,16 @@ Resources:
       IpProtocol: -1
       SourceSecurityGroupId: !Ref ClusterSecurityGroup
       Description: Self Reference
-      
+
+  ClusterAllowIngressFromBastion:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !GetAtt BastionSecurityGroup.GroupId
+      GroupId: !GetAtt ClusterSecurityGroup.GroupId
+
   RDSDBClusterParameterGroup:
     Type: AWS::RDS::DBClusterParameterGroup
     Properties:

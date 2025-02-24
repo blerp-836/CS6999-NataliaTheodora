@@ -1048,6 +1048,7 @@ Resources:
       Parameters:
         pEnv: !Ref pEnv
         pImageTag: !Ref pImageTag
+        pPublicSubnet: !Ref rTier1Subnet1
         DBName: !Sub ${pEnv}AiAloeSensitiveDb
         DBType: sensitiveDb
         IamUser: aloesens
@@ -1088,6 +1089,7 @@ Resources:
       Parameters:
         pEnv: !Ref pEnv
         pImageTag: !Ref pImageTag
+        pPublicSubnet: !Ref rTier1Subnet1
         DBName: !Sub ${pEnv}AiAloePublishedDb
         DBType: publishedDb
         IamUser: aloepub
