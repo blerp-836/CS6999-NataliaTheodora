@@ -49,6 +49,13 @@ HEReferenceDataPipeline/
 - `backend/flyway/Dockerfile`: Dockerfile for Flyway database migration container.
 - `backend/ssl/rds-combined-ca-bundle.pem`: The CA cert for the RDS databases (Lambda functions connect with SSL)
 
+### Key Backend Components:
+
+- [Aggregate Function](./aggregate/README.md)
+- [Flyway Migrations Function](./flyway/README.md)
+- [DB Bootstrap Function](./dbbootstrap/README.md)
+- [CloudFormation Custom Resource Invoker](./customResourceFn/README.md)
+
 ### Important Integration Points:
 
 - Aurora PostgreSQL Cluster: Main data storage for both sensitive and published data.

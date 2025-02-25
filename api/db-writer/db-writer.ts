@@ -143,22 +143,25 @@ async function processBatch(records: SQSRecord[]): Promise<ProcessResult[]> {
 export async function processMessage(record: SQSRecord, client: Client): Promise<ProcessResult> {
   try {
     const event: RawData = JSON.parse(record.body);
+    let parsedEventData: CaliperEvent;
 
-    // Parse and anonymize eventData before saving
-    const parsedEventData = JSON.parse(event.eventData) as CaliperEvent;
+    // Ensure eventData is a valid JSON string
+    if (typeof event.eventData !== 'string') {
+      throw new Error(`eventData is not a string: ${event.eventData}`);
+    }
+    try {
+      parsedEventData = JSON.parse(event.eventData) as CaliperEvent;
+    } catch (parseError) {
+      console.error('Invalid eventData JSON:', event.eventData, parseError);
+      throw parseError; // Fail the message for retry or DLQ
+    }
+
     const anonymizedEventData = anonymizeEvent(parsedEventData);
     event.eventData = JSON.stringify(anonymizedEventData);
-
-    // Save anonymized data to DB
     const saveResult = await saveData(event, client);
     console.log(`saving event: ${saveResult.status}`);
-
-    // Add the DB-assigned ID to the event
     event.id = saveResult.id;
-
-    // Send to SQS (already anonymized)
     await sendMessageToSQS(event);
-
     return { record, success: true };
   } catch (error) {
     console.error('Error processing message:', error, record);
