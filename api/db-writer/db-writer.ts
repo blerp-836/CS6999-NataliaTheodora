@@ -19,7 +19,7 @@ let AnonymizeSQSQueueUrl: string;
 
 // Hashing configuration
 const HASH_ALGORITHM = 'sha256';
-const SALT = process.env['HASH_SALT'] || 'your-secret-salt'; // Set in Lambda env vars or Secrets Manager
+const SALT = process.env['HASH_SALT'] || 'your-secret-salt';
 
 function initialize() {
   if (!initialized || process.env['underTest'] === 'true') {
@@ -34,7 +34,6 @@ function initialize() {
   }
 }
 
-// Caliper-like event interface with extensions
 interface CaliperEvent {
   actor: {
     id: string;
@@ -47,34 +46,24 @@ interface CaliperEvent {
   object: any;
   eventTime: string;
   extensions?: {
-    originalActor?: any; // Store original actor here
+    originalActor?: any;
     [key: string]: any;
   };
   [key: string]: any;
 }
 
-/**
- * Hashes a user ID with a salt
- */
 function hashUserId(userId: string): string {
   return createHash(HASH_ALGORITHM)
     .update(userId + SALT)
     .digest('hex');
 }
 
-/**
- * Pseudo-anonymizes a Caliper event, moving original actor to extensions
- */
 export function anonymizeEvent(event: CaliperEvent): CaliperEvent {
   const anonymizedEvent = { ...event };
-
-  // Store original actor in extensions
   if (!anonymizedEvent.extensions) {
     anonymizedEvent.extensions = {};
   }
   anonymizedEvent.extensions.originalActor = { ...anonymizedEvent.actor };
-
-  // Anonymize the actor field
   if (anonymizedEvent.actor?.id) {
     anonymizedEvent.actor = {
       ...anonymizedEvent.actor,
@@ -84,13 +73,11 @@ export function anonymizeEvent(event: CaliperEvent): CaliperEvent {
     delete anonymizedEvent.actor.email;
     delete anonymizedEvent.actor.description;
   }
-
   return anonymizedEvent;
 }
 
 export const lambdaHandler: SQSHandler = async (event: SQSEvent): Promise<SQSBatchResponse> => {
   const batchItemFailures: { itemIdentifier: string }[] = [];
-
   initialize();
   try {
     const initialResults = await processBatch(event.Records);
@@ -105,7 +92,6 @@ export const lambdaHandler: SQSHandler = async (event: SQSEvent): Promise<SQSBat
       batchItemFailures.push({ itemIdentifier: record.messageId });
     });
   }
-
   return { batchItemFailures };
 };
 
@@ -118,11 +104,9 @@ export interface ProcessResult {
 async function processBatch(records: SQSRecord[]): Promise<ProcessResult[]> {
   const results: ProcessResult[] = [];
   let client: Client | null = null;
-
   try {
     client = await createDbConnection(dbHost, dbPort, dbName, dbIamUser, awsRegion);
     console.log('Connected to the database');
-
     for (const record of records) {
       try {
         const result = await processMessage(record, client);
@@ -142,22 +126,12 @@ async function processBatch(records: SQSRecord[]): Promise<ProcessResult[]> {
 
 export async function processMessage(record: SQSRecord, client: Client): Promise<ProcessResult> {
   try {
-    const event: RawData = JSON.parse(record.body);
-    let parsedEventData: CaliperEvent;
-
-    // Ensure eventData is a valid JSON string
-    if (typeof event.eventData !== 'string') {
-      throw new Error(`eventData is not a string: ${event.eventData}`);
-    }
-    try {
-      parsedEventData = JSON.parse(event.eventData) as CaliperEvent;
-    } catch (parseError) {
-      console.error('Invalid eventData JSON:', event.eventData, parseError);
-      throw parseError; // Fail the message for retry or DLQ
-    }
-
+    // Parse record.body into RawData with eventData as string
+    const event = JSON.parse(record.body) as RawData;
+    // Parse eventData into CaliperEvent for anonymization
+    const parsedEventData: CaliperEvent = JSON.parse(event.eventData);
     const anonymizedEventData = anonymizeEvent(parsedEventData);
-    event.eventData = JSON.stringify(anonymizedEventData);
+    event.eventData = JSON.stringify(anonymizedEventData); // Back to string for saveData
     const saveResult = await saveData(event, client);
     console.log(`saving event: ${saveResult.status}`);
     event.id = saveResult.id;
@@ -170,11 +144,11 @@ export async function processMessage(record: SQSRecord, client: Client): Promise
 }
 
 export interface RawData {
-  id?: string; // Optional until assigned
+  id?: string;
   dataType: string;
   namespace: string;
   namespaceVersion: string;
-  eventData: string;
+  eventData: string; // Keep as string for DB and SQS
 }
 
 export async function saveData(data: RawData, client: Client): Promise<any> {
@@ -183,11 +157,8 @@ INSERT INTO ${data.namespace}_raw_events
 (event, event_type, type_version) 
 VALUES ($1, $2, $3)
 RETURNING id, create_date`;
-  
-  // Pass eventData as-is since it's already a JSON string
   const values = [data.eventData, data.dataType, data.namespaceVersion];
   const result = await client.query(query, values);
-
   return {
     status: JSON.stringify({
       message: `${data.namespace} data saved successfully`,
@@ -204,10 +175,8 @@ async function sendMessageToSQS(data: RawData): Promise<string | undefined> {
       QueueUrl: AnonymizeSQSQueueUrl,
       MessageBody: JSON.stringify(data),
     };
-
     const command = new SendMessageCommand(params);
     const response = await sqsClient.send(command);
-
     console.log(`Sent ${data.dataType} event ${data.id} to SQS successfully:`, response.MessageId);
     return response.MessageId;
   } catch (error) {
