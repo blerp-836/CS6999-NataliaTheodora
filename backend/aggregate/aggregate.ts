@@ -13,37 +13,40 @@ export const handler = async () => {
   return result.status;
 };
 
-/**
- * Runs aggregation queries on data in the published database.
- * 
- * @returns {Promise<Object>} A promise that resolves to an object containing:
- *   - status: JSON string with message, id, and timestamp
- * @throws {Error} If database operations fail
- * 
- * @example
- * try {
- *   const result = await aggregate();
- *   console.log(result.status);
- * } catch (error) {
- *   console.error('Failed to aggregate data:', error);
- * }
- */
+
 async function aggregate(): Promise<any> {
   let client: Client | null = null;
 
   try {
     client = await createDbConnection(dbHost, dbPort, dbName, dbIamUser, awsRegion);
 
-    // Prepare the eventCounts aggregation 
-    const dropEventCounts = `DROP TABLE IF EXISTS caliper_event_counts`;
-    const eventCounts = `
-      CREATE TABLE caliper_event_counts
-      AS
-      SELECT event_type, count(*) 
-      FROM caliper_published_events GROUP BY event_type`;
+    const selectEventCountsInLastHour = `
+      SELECT event->'group'->'courseNumber' AS course_id, event->'actor'->'id' AS user_id, COUNT(*) AS total, event_type  
+	        FROM caliper_published_events 
+	        WHERE create_date >= NOW() - INTERVAL '1 HOURS'
+	        GROUP BY course_id, user_id, event_type;`;
     
-    await client.query(dropEventCounts);
-    await client.query(eventCounts);
+    const result = await client.query(selectEventCountsInLastHour);
+
+    const data = [];
+    for(const row of result.rows) {
+      var date = new Date(row.create_date);
+      const values = [ 
+        row.user_id, 
+        row.course_id, 
+        row.event_type, 
+        date.getUTCFullYear(), 
+        date.getUTCMonth(), 
+        date.getUTCDate(),
+        date.getUTCDay(),
+        date.getUTCHours(),
+        row.total
+      ];
+      data.push(values);
+    }
+
+    const insertGroupedCounts = `INSERT INTO caliper_published_events_count(user_id, course_id, event_type, year, month, day_of_month, day_of_week, hour, total) VALUES ${data.map((row) => `($1, $2, $3, $4, $5, $6, $7, $8, $9)`).join(',')}`;
+    await client.query(insertGroupedCounts, data.flat());
 
     return {
       status: JSON.stringify({
