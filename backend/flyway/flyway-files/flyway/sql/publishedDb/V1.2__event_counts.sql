@@ -11,5 +11,5 @@ CREATE TABLE IF NOT EXISTS caliper_published_events_count (
   total INTEGER
 );
 
-CREATE INDEX user_id_idx ON caliper_published_events_count(user_id);
-CREATE INDEX course_id_idx ON caliper_published_events_count(course_id);
+CREATE INDEX cpec_user_id_idx ON caliper_published_events_count(user_id);
+CREATE INDEX cpec_course_id_idx ON caliper_published_events_count(course_id);
