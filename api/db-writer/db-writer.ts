@@ -34,7 +34,7 @@ function initialize() {
   }
 }
 
-interface CaliperEvent {
+export interface CaliperEvent {
   actor: {
     id: string;
     type: string;
@@ -126,12 +126,12 @@ async function processBatch(records: SQSRecord[]): Promise<ProcessResult[]> {
 
 export async function processMessage(record: SQSRecord, client: Client): Promise<ProcessResult> {
   try {
-    // Parse record.body into RawData with eventData as string
     const event = JSON.parse(record.body) as RawData;
-    // Parse eventData into CaliperEvent for anonymization
-    const parsedEventData: CaliperEvent = JSON.parse(event.eventData);
-    const anonymizedEventData = anonymizeEvent(parsedEventData);
-    event.eventData = JSON.stringify(anonymizedEventData); // Back to string for saveData
+    if (typeof event.eventData === 'string') {
+      event.eventData = JSON.parse(event.eventData); 
+    }
+    const anonymizedEventData = anonymizeEvent(event.eventData);
+    event.eventData = anonymizedEventData
     const saveResult = await saveData(event, client);
     console.log(`saving event: ${saveResult.status}`);
     event.id = saveResult.id;
@@ -148,7 +148,7 @@ export interface RawData {
   dataType: string;
   namespace: string;
   namespaceVersion: string;
-  eventData: string; // Keep as string for DB and SQS
+  eventData: CaliperEvent;
 }
 
 export async function saveData(data: RawData, client: Client): Promise<any> {
@@ -157,7 +157,7 @@ INSERT INTO ${data.namespace}_raw_events
 (event, event_type, type_version) 
 VALUES ($1, $2, $3)
 RETURNING id, create_date`;
-  const values = [data.eventData, data.dataType, data.namespaceVersion];
+  const values = [JSON.stringify(data.eventData), data.dataType, data.namespaceVersion];
   const result = await client.query(query, values);
   return {
     status: JSON.stringify({
