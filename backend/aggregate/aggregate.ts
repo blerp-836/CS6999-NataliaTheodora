@@ -61,8 +61,10 @@ async function aggregate(): Promise<any> {
       data.push(values);
     }
 
-    const insertGroupedCounts = `INSERT INTO caliper_published_events_count(user_id, course_id, event_type, year, month, day_of_month, day_of_week, hour, total) VALUES ${getValuesPlaceholder(data, 9)}`;
-    await client.query(insertGroupedCounts, data.flat());
+    if (data.length > 0) {
+      const insertGroupedCounts = `INSERT INTO caliper_published_events_count(user_id, course_id, event_type, year, month, day_of_month, day_of_week, hour, total) VALUES ${getValuesPlaceholder(data, 9)}`;
+      await client.query(insertGroupedCounts, data.flat());
+    }
 
     return {
       status: JSON.stringify({
