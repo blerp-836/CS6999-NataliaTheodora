@@ -21,16 +21,16 @@ async function aggregate(): Promise<any> {
     client = await createDbConnection(dbHost, dbPort, dbName, dbIamUser, awsRegion);
 
     const selectEventCountsInLastHour = `
-      SELECT event->'group'->'courseNumber' AS course_id, event->'actor'->'id' AS user_id, COUNT(*) AS total, event_type  
+      SELECT event->'group'->'courseNumber' AS course_id, event->'actor'->'id' AS user_id, COUNT(*) AS total, event_type, DATE_TRUNC('hour', create_date) as create_date_trunc  
 	        FROM caliper_published_events 
 	        WHERE create_date >= NOW() - INTERVAL '1 HOURS'
-	        GROUP BY course_id, user_id, event_type;`;
+	        GROUP BY course_id, user_id, event_type, create_date_trunc;`;
     
     const result = await client.query(selectEventCountsInLastHour);
 
     const data = [];
     for(const row of result.rows) {
-      var date = new Date(row.create_date);
+      var date = new Date(row.create_date_trunc);
       const values = [ 
         row.user_id, 
         row.course_id, 
