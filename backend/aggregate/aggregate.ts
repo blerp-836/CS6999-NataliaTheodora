@@ -36,10 +36,10 @@ async function aggregate(): Promise<any> {
         row.course_id, 
         row.event_type, 
         date.getUTCFullYear(), 
-        date.getUTCMonth(), 
+        date.getUTCMonth() + 1, 
         date.getUTCDate(),
-        date.getUTCDay(),
-        date.getUTCHours(),
+        date.getUTCDay() + 1,
+        date.getUTCHours() + 1,
         row.total
       ];
       data.push(values);
