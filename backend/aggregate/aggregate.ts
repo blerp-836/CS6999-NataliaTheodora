@@ -36,16 +36,16 @@ async function aggregate(): Promise<any> {
         row.course_id, 
         row.event_type, 
         date.getUTCFullYear(), 
-        date.getUTCMonth() + 1, 
+        date.getUTCMonth(), 
         date.getUTCDate(),
-        date.getUTCDay() + 1,
-        date.getUTCHours() + 1,
+        date.getUTCDay(),
+        date.getUTCHours(),
         row.total
       ];
       data.push(values);
     }
 
-    const insertGroupedCounts = `INSERT INTO caliper_published_events_count(user_id, course_id, event_type, year, month, day_of_month, day_of_week, hour, total) VALUES ${data.map((row) => `($1, $2, $3, $4, $5, $6, $7, $8, $9)`).join(',')}`;
+    const insertGroupedCounts = `INSERT INTO caliper_published_events_count(user_id, course_id, event_type, year, month, day_of_month, day_of_week, hour, total) VALUES ${getValuesPlaceholder(data, 9)}`;
     await client.query(insertGroupedCounts, data.flat());
 
     return {
@@ -65,4 +65,15 @@ async function aggregate(): Promise<any> {
       await client.end();
     }
   }
+}
+
+function getValuesPlaceholder(valuesToBeInserted: any[], numberOfColumns: number) {
+  const valuesPlaceholder = `${valuesToBeInserted.map((row, i) => {
+    let valuePlaceholder = [];
+    for (let j = 0; j < numberOfColumns; j++) {
+      valuePlaceholder.push(`$${i * numberOfColumns + (j+1)}`);
+    }
+    return `(${valuePlaceholder.join(',')})`;
+  }).join(',')}`;
+  return valuesPlaceholder;
 }
