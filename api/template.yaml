@@ -232,6 +232,7 @@ Resources:
           DBName: !Ref pSensitiveDBName
           DBIamUser: !Ref pSensitiveDBIamUser
           AwsRegion: !Ref AWS::Region
+          EncryptionKey: !Ref pEncryptionKey
           NODE_OPTIONS: --enable-source-maps
       Layers:
         - !Ref SchemaLayer
