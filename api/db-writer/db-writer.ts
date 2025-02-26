@@ -2,7 +2,7 @@ import { SQSHandler, SQSEvent, SQSRecord, SQSBatchResponse } from 'aws-lambda';
 import { ensureEnvVar, createDbConnection } from './utils';
 import { Client } from 'pg';
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { createHash } from 'crypto';
+import { createHmac } from 'crypto';
 
 let initialized = false;
 
@@ -19,7 +19,8 @@ let AnonymizeSQSQueueUrl: string;
 
 // Hashing configuration
 const HASH_ALGORITHM = 'sha256';
-const SALT = process.env['HASH_SALT'] || 'your-secret-salt';
+let encryptionKey : string;
+
 
 function initialize() {
   if (!initialized || process.env['underTest'] === 'true') {
@@ -30,6 +31,7 @@ function initialize() {
     awsRegion = ensureEnvVar('AwsRegion');
     sqsClient = new SQSClient({ region: awsRegion });
     AnonymizeSQSQueueUrl = ensureEnvVar('AnonymizeSQSQueueUrl');
+    encryptionKey = ensureEnvVar('EncryptionKey');
     initialized = true;
   }
 }
@@ -53,8 +55,8 @@ export interface CaliperEvent {
 }
 
 function hashUserId(userId: string): string {
-  return createHash(HASH_ALGORITHM)
-    .update(userId + SALT)
+  return "urn:uuid:" + createHmac(HASH_ALGORITHM, encryptionKey!)
+    .update(userId)
     .digest('hex');
 }
 
