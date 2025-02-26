@@ -23,7 +23,7 @@ async function aggregate(): Promise<any> {
     const selectEventCountsInLastHour = `
       SELECT event->'group'->'courseNumber' AS course_id, event->'actor'->'id' AS user_id, COUNT(*) AS total, event_type, DATE_TRUNC('hour', create_date) as create_date_trunc  
 	        FROM caliper_published_events 
-	        WHERE create_date >= NOW() - INTERVAL '1 HOURS'
+	        WHERE create_date >= DATE_TRUNC('hour',NOW()) - INTERVAL '1 HOURS' and create_date < DATE_TRUNC('hour',NOW())
 	        GROUP BY course_id, user_id, event_type, create_date_trunc;`;
     
     const result = await client.query(selectEventCountsInLastHour);
