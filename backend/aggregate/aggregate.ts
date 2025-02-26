@@ -29,9 +29,9 @@ async function aggregate(): Promise<any> {
     dateMinusOneHour.setHours(dateMinusOneHour.getHours() - 1);
 
     // delete counts that may have already been calculated for this hour to avoid duplication.
-    const deleteEventCountsInLastHour = `DELETE FROM caliper_published_events_count WHERE year=$1 AND month=$2 AND day_of_month=$3 AND day_of_week=$4 AND hour=$5`
+    const deleteEventCountsInLastHour = `DELETE FROM caliper_published_events_count WHERE year=$1 AND month=$2 AND day_of_month=$3 AND day_of_week=$4 AND hour=$5;`
     await client.query(deleteEventCountsInLastHour, [
-      dateMinusOneHour.getUTCFullYear, 
+      dateMinusOneHour.getUTCFullYear(), 
       dateMinusOneHour.getUTCMonth() + 1, 
       dateMinusOneHour.getUTCDate(), 
       dateMinusOneHour.getUTCDay(), 
