@@ -99,10 +99,6 @@ async function getSecret(secretArn: string, awsRegion: string): Promise<SecretVa
  */
 async function executeSqlStatements(client: Client, sqlStatements: { [key: string]: string }): Promise<void> {
 
-
-  const secret = await getSecret(readOnlyUserSecretArn, awsRegion);
-  console.log('ro secret retrieved');
-
   for (const [statementName, statement] of Object.entries(sqlStatements)) {
     logger.info(`Executing SQL statement: ${statementName}`);
     try {
