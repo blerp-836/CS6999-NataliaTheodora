@@ -769,6 +769,7 @@ Resources:
       Environment:
         Variables:
           MasterUserSecretArn: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
+          ReadOnlyUserSecretArn: !Ref DBReadOnlyUser
           DBHost: !Ref DnsRecord
           DBPort: !GetAtt AuroraDBCluster.Endpoint.Port
           DBName: !Ref DBType
@@ -850,7 +851,6 @@ Resources:
       Environment:
         Variables:
           MASTER_SECRET_ARN: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
-          ReadOnlyUserSecretArn: !Ref DBReadOnlyUser
           FLYWAY_URL: !Sub "jdbc:postgresql://${DnsRecord}:${AuroraDBCluster.Endpoint.Port}/${DBType}"
           FLYWAY_LOCATIONS: !Sub "filesystem:/flyway/sql/${DBType}"
           FLYWAY_PLACEHOLDERS_DATABASE_SCHEMA:  public
