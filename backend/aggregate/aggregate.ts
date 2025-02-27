@@ -69,7 +69,7 @@ async function getPaginatedData(client: Client | null, dateMinusOneHour: any, pa
         GROUP BY course_id, user_id, event_type, create_date_trunc
         LIMIT $2 OFFSET $3;`;
     const result = await client.query(selectEventCountsInLastHour, [dateMinusOneHour.toISOString(), pageSize, offset]);
-    return result.rows;
+    return result;
   } catch (error) {
     console.error('Error fetching data:', error);
     throw error;
