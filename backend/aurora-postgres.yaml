@@ -850,7 +850,7 @@ Resources:
       Environment:
         Variables:
           MASTER_SECRET_ARN: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
-          ReadOnlyUserSecretArn: {{resolve:secretsmanager:rds-readonly-user:SecretString}}
+          ReadOnlyUserSecretArn: !Ref DBReadOnlyUser
           FLYWAY_URL: !Sub "jdbc:postgresql://${DnsRecord}:${AuroraDBCluster.Endpoint.Port}/${DBType}"
           FLYWAY_LOCATIONS: !Sub "filesystem:/flyway/sql/${DBType}"
           FLYWAY_PLACEHOLDERS_DATABASE_SCHEMA:  public
