@@ -73,8 +73,6 @@ async function getPaginatedData(client: Client | null, dateMinusOneHour: any, pa
   } catch (error) {
     console.error('Error fetching data:', error);
     throw error;
-  } finally {
-    await client.end();
   }
 }
 
