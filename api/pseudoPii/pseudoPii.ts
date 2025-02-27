@@ -222,6 +222,9 @@ export function findAndReplacePii(obj: any): void {
                 continue; // Already anonymized in previous steps
             }
             if (typeof obj[key] === 'string') {
+                if (obj[key] === 'id') {
+                    continue; // Skip 'id' fields
+                }
                 const piiData = identifyPII(obj[key]);
                 // loop through identified piiData and replace with anonymized text
                 for (const piiDatakey in piiData) {
