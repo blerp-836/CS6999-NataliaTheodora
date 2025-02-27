@@ -20,16 +20,15 @@ async function aggregate(): Promise<any> {
   try {
     client = await createDbConnection(dbHost, dbPort, dbName, dbIamUser, awsRegion);
 
-    const date = new Date()
+    const date = new Date();
     date.setMinutes(0);
     date.setSeconds(0);
     date.setMilliseconds(0);
-
     const dateMinusOneHour = new Date(date);
     dateMinusOneHour.setHours(dateMinusOneHour.getHours() - 1);
 
     // delete counts that may have already been calculated for this hour to avoid duplication.
-    const deleteEventCountsInLastHour = `DELETE FROM caliper_published_events_count WHERE year=$1 AND month=$2 AND day_of_month=$3 AND day_of_week=$4 AND hour=$5;`
+    const deleteEventCountsInLastHour = `DELETE FROM caliper_published_events_count WHERE year=$1 AND month=$2 AND day_of_month=$3 AND day_of_week=$4 AND hour >= $5;`
     await client.query(deleteEventCountsInLastHour, [
       dateMinusOneHour.getUTCFullYear(), 
       dateMinusOneHour.getUTCMonth() + 1, 
@@ -39,23 +38,24 @@ async function aggregate(): Promise<any> {
     ]);
 
     const selectEventCountsInLastHour = `
-      SELECT event->'group'->'courseNumber' AS course_id, event->'actor'->'id' AS user_id, COUNT(*) AS total, event_type
+      SELECT event->'group'->'courseNumber' AS course_id, event->'actor'->'id' AS user_id, COUNT(*) AS total, event_type, DATE_TRUNC('hour', create_date) as create_date_trunc
 	        FROM caliper_published_events 
-	        WHERE create_date >= $1 and create_date < $2
-	        GROUP BY course_id, user_id, event_type;`;
-    const result = await client.query(selectEventCountsInLastHour, [dateMinusOneHour.toISOString(), date.toISOString()]);
+	        WHERE create_date >= $1
+	        GROUP BY course_id, user_id, event_type, create_date_trunc;`;
+    const result = await client.query(selectEventCountsInLastHour, [dateMinusOneHour.toISOString()]);
 
     const data = [];
     for(const row of result.rows) {
+      const createDateTruncated = new Date(row.create_date_trunc);
       const values = [ 
         row.user_id, 
         row.course_id, 
         row.event_type, 
-        dateMinusOneHour.getUTCFullYear(), 
-        dateMinusOneHour.getUTCMonth() + 1, 
-        dateMinusOneHour.getUTCDate(),
-        dateMinusOneHour.getUTCDay(),
-        dateMinusOneHour.getUTCHours(),
+        createDateTruncated.getUTCFullYear(), 
+        createDateTruncated.getUTCMonth() + 1, 
+        createDateTruncated.getUTCDate(),
+        createDateTruncated.getUTCDay(),
+        createDateTruncated.getUTCHours(),
         row.total
       ];
       data.push(values);
