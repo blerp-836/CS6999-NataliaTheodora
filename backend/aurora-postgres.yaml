@@ -524,7 +524,7 @@ Resources:
   DBReadOnlyUser:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub ${!Select [5, !Split [":", !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn]]}_ro
+      Name: !Sub ro-${!Select [5, !Split [":", !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn]]}
       Description: !Sub "This secret contains the credentials for a read-only user for ${DBType}."
       GenerateSecretString:
         SecretStringTemplate: '{"username": "aloereadonly"}'
@@ -850,6 +850,7 @@ Resources:
       Environment:
         Variables:
           MASTER_SECRET_ARN: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
+          ReadOnlyUserSecretArn: {{resolve:secretsmanager:rds-readonly-user:SecretString}}
           FLYWAY_URL: !Sub "jdbc:postgresql://${DnsRecord}:${AuroraDBCluster.Endpoint.Port}/${DBType}"
           FLYWAY_LOCATIONS: !Sub "filesystem:/flyway/sql/${DBType}"
           FLYWAY_PLACEHOLDERS_DATABASE_SCHEMA:  public
