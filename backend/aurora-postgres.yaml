@@ -524,7 +524,7 @@ Resources:
   DBReadOnlyUser:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub ro-${!Select [5, !Split [":", !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn]]}
+      Name: !Join [ "- ", "ro", [!Select [6, !Split [":", !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn]]]]
       Description: !Sub "This secret contains the credentials for a read-only user for ${DBType}."
       GenerateSecretString:
         SecretStringTemplate: '{"username": "aloereadonly"}'
