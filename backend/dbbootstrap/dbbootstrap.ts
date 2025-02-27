@@ -104,11 +104,15 @@ async function executeSqlStatements(client: Client, sqlStatements: { [key: strin
 
   for (const [statementName, statement] of Object.entries(sqlStatements)) {
     logger.info(`Executing SQL statement: ${statementName}`);
-    const sql = statement
-          .replace('{{IamUser}}', iamUser)
-          .replace('{{ReadOnlyUser}}', secret.username)
-          .replace('{{ReadOnlyPass}}', secret.password);
-    await client.query(sql);
+    try {
+      const sql = statement
+            .replace('{{IamUser}}', iamUser)
+            .replace('{{ReadOnlyUser}}', secret.username)
+            .replace('{{ReadOnlyPass}}', secret.password);
+      await client.query(sql);
+    } catch(e) {
+      logger.error(`statement failed: ${statementName}, ${e}`);
+    }
   }
 }
 

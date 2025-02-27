@@ -731,6 +731,9 @@ Resources:
                 Action: secretsmanager:GetSecretValue
                 Resource: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
               - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref DBReadOnlyUser
+              - Effect: Allow
                 Action:
                   - kms:Decrypt
                 Resource:
