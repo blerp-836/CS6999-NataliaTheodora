@@ -61,7 +61,7 @@ async function deleteSincePastHour(client: Client | null, dateMinusOneHour: any)
 
 async function getPaginatedData(client: Client | null, dateMinusOneHour: any, page: number, pageSize: number) {
   try {
-    const offset = (page - 1) * pageSize;
+    const offset = page * pageSize;
     const selectEventCountsInLastHour = `
     SELECT event->'group'->'courseNumber' AS course_id, event->'actor'->'id' AS user_id, COUNT(*) AS total, event_type, DATE_TRUNC('hour', create_date) as create_date_trunc
         FROM caliper_published_events 
