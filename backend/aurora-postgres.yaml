@@ -523,8 +523,8 @@ Resources:
           Value: !Ref Compliance
 
   DBReadOnlyUser:
-    Condition: CreateReadOnlyUser
     Type: AWS::SecretsManager::Secret
+    Condition: CreateReadOnlyUser
     Properties:
       Name: !Sub ${pEnv}-${DBType}-readonly-user
       Description: !Sub "This secret contains the credentials for a read-only user for ${DBType}."
@@ -732,10 +732,12 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
-              - !If CreateReadOnlyUser
-              - Effect: Allow
-                Action: secretsmanager:GetSecretValue
-                Resource: !Ref DBReadOnlyUser
+              - !If
+                - CreateReadOnlyUser
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource: !Ref DBReadOnlyUser
+                - !Ref "AWS::NoValue"
               - Effect: Allow
                 Action:
                   - kms:Decrypt
