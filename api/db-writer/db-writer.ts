@@ -54,7 +54,7 @@ export interface CaliperEvent {
   [key: string]: any;
 }
 
-function hashUserId(userId: string): string {
+export function hashUserId(userId: string): string {
   return "urn:uuid:" + createHmac(HASH_ALGORITHM, encryptionKey!)
     .update(userId)
     .digest('hex');
@@ -66,6 +66,7 @@ export function anonymizeEvent(event: CaliperEvent): CaliperEvent {
     anonymizedEvent.extensions = {};
   }
   anonymizedEvent.extensions.originalActor = { ...anonymizedEvent.actor };
+  // anonymizedEvent.extensions.originalActor = JSON.parse(JSON.stringify(anonymizedEvent.actor));
   if (anonymizedEvent.actor?.id) {
     anonymizedEvent.actor = {
       ...anonymizedEvent.actor,
