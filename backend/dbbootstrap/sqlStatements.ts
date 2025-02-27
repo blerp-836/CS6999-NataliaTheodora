@@ -8,9 +8,6 @@ export const sensitiveDbSqlStatements: Record<string, string> = {
   'Grant DML privs on public schema to user': 'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO {{IamUser}}',
   'Grant usage on public schema to user': 'GRANT USAGE ON SCHEMA public TO {{IamUser}}',
   'Set default table privileges for user': 'ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO {{IamUser}}',
-
-  'Create ro user': `CREATE USER {{ReadOnlyUser}} with PASSWORD '{{ReadOnlyPass}}'`,
-
   'Create raw events table': 'CREATE TABLE IF NOT EXISTS raw_events (id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, event_type VARCHAR(64), type_version VARCHAR(16), event JSONB NOT NULL, create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
 };
 
