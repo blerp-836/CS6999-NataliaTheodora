@@ -777,7 +777,7 @@ Resources:
       Environment:
         Variables:
           MasterUserSecretArn: !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn
-          ReadOnlyUserSecretArn: !Ref DBReadOnlyUser
+          ReadOnlyUserSecretArn: !If [CreateReadOnlyUser, !Ref DBReadOnlyUser, !Ref AWS::NoValue]
           DBHost: !Ref DnsRecord
           DBPort: !GetAtt AuroraDBCluster.Endpoint.Port
           DBName: !Ref DBType
