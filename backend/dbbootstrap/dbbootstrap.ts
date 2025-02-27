@@ -99,17 +99,26 @@ async function getSecret(secretArn: string, awsRegion: string): Promise<SecretVa
  */
 async function executeSqlStatements(client: Client, sqlStatements: { [key: string]: string }): Promise<void> {
 
+
   const secret = await getSecret(readOnlyUserSecretArn, awsRegion);
   console.log('ro secret retrieved');
 
   for (const [statementName, statement] of Object.entries(sqlStatements)) {
     logger.info(`Executing SQL statement: ${statementName}`);
     try {
-      const sql = statement
-            .replace('{{IamUser}}', iamUser)
-            .replace('{{ReadOnlyUser}}', secret.username)
-            .replace('{{ReadOnlyPass}}', secret.password);
-      await client.query(sql);
+      if (dbType === 'sensitive') {
+        const sql = statement.replace('{{IamUser}}', iamUser);
+        await client.query(sql);
+      } else {
+        const secret = await getSecret(readOnlyUserSecretArn, awsRegion);
+        console.log('ro secret retrieved');
+
+        const sql = statement
+        .replace('{{IamUser}}', iamUser)
+        .replace('{{ReadOnlyUser}}', secret.username)
+        .replace('{{ReadOnlyPass}}', secret.password);
+        await client.query(sql);
+      }
     } catch(e) {
       logger.error(`statement failed: ${statementName}, ${e}`);
     }
