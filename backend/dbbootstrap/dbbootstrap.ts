@@ -111,7 +111,7 @@ async function executeSqlStatements(client: Client, sqlStatements: { [key: strin
             .replace('{{ReadOnlyPass}}', secret.password);
       await client.query(sql);
     } catch(e) {
-      logger.info(`statement failed: ${statementName}`);
+      logger.error(`statement failed: ${statementName}, ${e}`);
     }
   }
 }
