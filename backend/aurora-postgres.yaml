@@ -100,7 +100,7 @@ Parameters:
   IamUser:
     Description: The name of the IAM user that will be created to manage this database
     Type: String
-  
+
 ###########################################################################
 # Mandatory tags that will be added to all resources that support tags
 ###########################################################################
@@ -250,6 +250,7 @@ Conditions:
   DoEnableIAM: !Not [!Equals [!Ref DBEngineVersion, 9.6.8]]
   IsCreateAlarms: !Equals [!Ref pCreateAlarms, 'True']
   IsReplicaAndCreateAlarms: !And [Condition: IsReplica, Condition: IsCreateAlarms]
+  CreateReadOnlyUser: !Equals [!Ref DBType, "publishedDb"]
   
   
 
@@ -520,12 +521,6 @@ Resources:
         -
           Key: Compliance
           Value: !Ref Compliance
-
-  Condition:
-    CreateReadOnlyUser: 
-        !Equals 
-            - !Ref DBType 
-            - "publishedDb"
 
   DBReadOnlyUser:
     Condition: CreateReadOnlyUser
