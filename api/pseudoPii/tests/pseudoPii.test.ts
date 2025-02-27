@@ -31,6 +31,57 @@ const testEvent = {
     ]
 };
 
+const testCaliperEvent = {
+    id: "urn:uuid:7e10e4f3-a0d8-4430-95bd-783ffae4d916",
+    type: "ToolUseEvent",
+    actor: {
+        id: "urn:uuid:e0ece744d654cd0ced69564cac245df7c916fd09a00b5deb01aecbafcd2efc0c",
+        type: "Person"
+    },
+    edApp: "https://example.edu",
+    group: {
+        id: "https://example.edu/terms/201601/courses/7/sections/1",
+        type: "CourseSection",
+        courseNumber: "CPS 435-01",
+        academicSession: "Fall 2016"
+    },
+    action: "Used",
+    object: {
+        id: "https://example.edu",
+        type: "SoftwareApplication"
+    },
+    profile: "ToolUseProfile",
+    session: {
+        id: "https://example.edu/sessions/1f6442a482de72ea6ad134943812bff564a76259",
+        type: "Session",
+        startedAtTime: "2016-11-15T10:00:00.000Z"
+    },
+    context: "http://purl.imsglobal.org/ctx/caliper/v1p2",
+    eventTime: "2016-11-15T10:15:00.000Z",
+    extensions: {
+        originalActor: {
+            id: "https://example.edu/users/554433",
+            name: "Test User",
+            type: "Person",
+            email: "b202c411@pseudo.com"
+        },
+        randomExtension: {
+            maybe_email: "john.doe@example.com"
+        }
+    },
+    membership: {
+        id: "https://example.edu/terms/201601/courses/7/sections/1/rosters/1",
+        type: "Membership",
+        roles: [
+        "Learner"
+        ],
+        member: "https://example.edu/users/554433",
+        status: "Active",
+        dateCreated: "2016-08-01T06:00:00.000Z",
+        organization: "https://example.edu/terms/201601/courses/7/sections/1"
+    }
+};
+
 const context : Context = {
     awsRequestId: 'mock-request-id',
     callbackWaitsForEmptyEventLoop: false,
@@ -119,7 +170,7 @@ describe('PII Processing Functions', () => {
                 EndOffset: text.length
             };
             const result = pseudonymizeData(text, entity);
-            expect(result).toMatch(/^\+1[a-f0-9]{10}$/);
+            expect(result).toMatch('<RETACTED_PHONE>');
         });
 
         it('should pseudonymize SSN', () => {
@@ -171,6 +222,24 @@ describe('PII Processing Functions', () => {
         it('should handle null values', () => {
             const objWithNull = { field: null };
             expect(() => findAndReplacePii(objWithNull)).not.toThrow();
+        });
+    });
+
+    describe('Custom Caliper Logic', () => {
+        it('should remove the originalActor', () => {
+            findAndReplacePii(testCaliperEvent);
+            expect(testCaliperEvent.extensions.originalActor).toBeUndefined();
+        });
+        
+        it('should not re-pseudo the actor id', () => {
+            findAndReplacePii(testCaliperEvent);
+            expect(testCaliperEvent.actor.id).toBe("urn:uuid:e0ece744d654cd0ced69564cac245df7c916fd09a00b5deb01aecbafcd2efc0c");
+        });
+        
+        it('Should detect emails in unexpected places', () => {
+            findAndReplacePii(testCaliperEvent);
+            expect(testCaliperEvent.extensions.randomExtension.maybe_email).not.toBe("jane.doe@example.com");
+            expect(testCaliperEvent.extensions.randomExtension.maybe_email).toMatch(/@pseudo\.com$/);
         });
     });
 

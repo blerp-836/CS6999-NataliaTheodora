@@ -212,7 +212,15 @@ export function findAndReplacePii(obj: any): void {
 
     // Handle objects
     if (obj && typeof obj === 'object') {
+        // Remove extensions.originalActor if it exists (Added in previous steps)
+        if (obj.extensions && obj.extensions.originalActor) {
+            delete obj.extensions.originalActor;
+        }
+
         for (const key in obj) {
+            if (key === 'actor') {
+                continue; // Already anonymized in previous steps
+            }
             if (typeof obj[key] === 'string') {
                 const piiData = identifyPII(obj[key]);
                 // loop through identified piiData and replace with anonymized text
@@ -253,7 +261,7 @@ export const pseudonymizeData = (text: string, entity: PIIEntity): string => {
     
     switch (entity.Type) {
         case 'PHONE':
-            return `+1${hash.substring(0, 10)}`;
+            return `<RETACTED_PHONE>`;
         case 'EMAIL':
             return `${hash.substring(0, 8)}@pseudo.com`;
         case 'SSN':
@@ -261,7 +269,7 @@ export const pseudonymizeData = (text: string, entity: PIIEntity): string => {
         case 'CREDIT_DEBIT_NUMBER':
             return `****-****-****-${hash.substring(0, 4)}`;
         default:
-            return `PSEUDO-${hash.substring(0, 8)}`;
+            return `REDACTED-${hash.substring(0, 8)}`;
     }
 };
 
