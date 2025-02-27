@@ -520,7 +520,19 @@ Resources:
         -
           Key: Compliance
           Value: !Ref Compliance
-          
+
+  DBReadOnlyUser:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub ${!Select [5, !Split [":", !GetAtt AuroraDBCluster.MasterUserSecret.SecretArn]]}_ro
+      Description: !Sub "This secret contains the credentials for a read-only user for ${DBType}."
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "aloereadonly"}'
+        GenerateStringKey: "password"
+        PasswordLength: 30
+        ExcludePunctuation: true
+        ExcludeCharacters: '"@/\'
+
   CPUUtilizationAlarm1:
     Type: AWS::CloudWatch::Alarm
     Condition: IsCreateAlarms
