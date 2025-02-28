@@ -102,7 +102,7 @@ async function executeSqlStatements(client: Client, sqlStatements: { [key: strin
   for (const [statementName, statement] of Object.entries(sqlStatements)) {
     logger.info(`Executing SQL statement: ${statementName}`);
     try {
-      if (dbType === 'sensitive') {
+      if (dbType === 'sensitiveDb') {
         const sql = statement.replace('{{IamUser}}', iamUser);
         await client.query(sql);
       } else {
@@ -175,7 +175,7 @@ export async function handler(event: any, context: any) {
     logger.info('SUCCESS: Connection to RDS PostgreSQL instance succeeded');
 
     if (event.RequestType === 'Create') {
-      const sqlStatements = dbType === 'sensitive' ? sensitiveDbSqlStatements : publishDbSqlStatements;
+      const sqlStatements = dbType === 'sensitiveDb' ? sensitiveDbSqlStatements : publishDbSqlStatements;
       await executeSqlStatements(client, sqlStatements);
       responseData.Data = 'SUCCESS: Executed SQL statements successfully.';
     } else if (event.RequestType === 'Update') {
