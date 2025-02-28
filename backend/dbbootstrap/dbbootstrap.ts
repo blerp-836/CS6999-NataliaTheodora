@@ -6,7 +6,7 @@ import * as fs from 'fs';
 const logger = console;
 
 const masterSecretArn = ensureEnvVar('MasterUserSecretArn');
-const readOnlyUserSecretArn = ensureEnvVar('ReadOnlyUserSecretArn');
+const readOnlyUserSecretArn = process.env['ReadOnlyUserSecretArn'];
 const dbHost = ensureEnvVar('DBHost');
 const dbPort = ensureEnvVar('DBPort');
 const dbName = ensureEnvVar('DBName');
